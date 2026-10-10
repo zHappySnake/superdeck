@@ -9,6 +9,7 @@
 ## Checklist
 
 - [ ] `just check` passes locally
+- [ ] Every commit is signed off (`git commit -s`, see the DCO section in CONTRIBUTING.md)
 - [ ] New source files have an SPDX license header
 - [ ] Nothing was copied or extracted from Elgato software (see the clean-room policy in CONTRIBUTING.md)
 - [ ] Bundled plugins only use `@superdeck/sdk` and the public protocol

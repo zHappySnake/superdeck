@@ -5,9 +5,10 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha / planning.** No application code exists yet. This
-> repository contains the project scope, architecture, and development
-> tooling. See the [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer and the core (milestones M1 and
+> M2) are in place: profiles, pages, folders, and the built-in actions run on
+> a device from the command line. There's no app or plugin support yet. See
+> the [roadmap](docs/ROADMAP.md) for what comes next.
 
 ## Goals
 
@@ -85,8 +86,24 @@ docs/        Roadmap, architecture, protocol notes
 
 ## Building
 
-There's nothing to build yet. To set up a development environment and run the
-repository checks, see [CONTRIBUTING.md](CONTRIBUTING.md).
+There's no app to run yet. What exists is `superdeck-cli`, a tool for driving
+a Stream Deck by hand:
+
+```sh
+cargo run -p superdeck-cli -- list            # connected devices
+cargo run -p superdeck-cli -- info            # model, serial, firmware
+cargo run -p superdeck-cli -- test-pattern    # check image orientation
+cargo run -p superdeck-cli -- events          # print key presses
+cargo run -p superdeck-cli -- render -i icon.svg -t Mute --align bottom
+                                              # draw a key as the app will
+cargo run -p superdeck-cli -- run             # run the device from its profiles
+cargo run -p superdeck-cli -- --help          # everything else
+```
+
+If you own a Stream Deck, checking it this way helps a lot; see
+[docs/device-protocol.md](docs/device-protocol.md#verification-status). To set
+up a development environment and run the repository checks, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Device permissions
 
@@ -116,6 +133,10 @@ Exception: the plugin SDK and protocol schemas in [`sdk/`](sdk/) are licensed
 under either the [MIT](sdk/LICENSE-MIT) or [Apache-2.0](sdk/LICENSE-APACHE)
 license, at your option, so plugins can use any license.
 
+The bundled Noto Sans fonts in
+[`crates/superdeck-render/fonts/`](crates/superdeck-render/fonts/) are under
+the [SIL Open Font License 1.1](crates/superdeck-render/fonts/OFL.txt).
+
 ## Trademarks
 
 SuperDeck is an independent project. It is not affiliated with, endorsed by,
@@ -132,3 +153,5 @@ assets.
   Python/GTK Stream Deck app for Linux
 - [python-elgato-streamdeck](https://github.com/abcminiuser/python-elgato-streamdeck):
   Python library, a valuable reference for the HID protocol
+- [elgato-streamdeck](https://crates.io/crates/elgato-streamdeck): Rust
+  library for the same devices, another protocol reference

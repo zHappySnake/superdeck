@@ -1,0 +1,26 @@
+# synthetic: hand-written from docs/device-protocol.md, not yet checked
+# against hardware. Serial number and firmware version are made up.
+model mk2
+
+# Opening the device aborts any half-finished image transfer.
+write 02 00*1023
+
+# Serial number "AL12K1A01234", firmware "1.00.012".
+feature-get 06 32 -> 06 0c 41 4c 31 32 4b 31 41 30 31 32 33 34 00*18
+feature-get 05 32 -> 05 0c 00 00 00 00 31 2e 30 30 2e 30 31 32 00*18
+
+# Brightness 50 %.
+feature-set 03 08 32 00*29
+
+# 1500-byte image on key 3: 1016 bytes, then 484.
+write 02 07 03 00 f8 03 00 00 ab*1016
+write 02 07 03 01 e4 01 01 00 ab*484 00*532
+
+# Key 0 down; key 14 down; key 0 up; key 14 up.
+read 19 -> 01 00 0f 00 01 00*14
+read 19 -> 01 00 0f 00 01 00*13 01
+read 19 -> 01 00 0f 00 00*14 01
+read 19 -> 01 00 0f 00 00*15
+
+# Reset.
+feature-set 03 02 00*30
