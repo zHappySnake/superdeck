@@ -5,9 +5,9 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha / planning.** No application code exists yet. This
-> repository contains the project scope, architecture, and development
-> tooling. See the [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer (milestone M1) is in place, with a
+> command-line tool for testing devices; there's no app yet. See the
+> [roadmap](docs/ROADMAP.md) for what comes next.
 
 ## Goals
 
@@ -85,8 +85,21 @@ docs/        Roadmap, architecture, protocol notes
 
 ## Building
 
-There's nothing to build yet. To set up a development environment and run the
-repository checks, see [CONTRIBUTING.md](CONTRIBUTING.md).
+There's no app to run yet. What exists is `superdeck-cli`, a tool for driving
+a Stream Deck by hand:
+
+```sh
+cargo run -p superdeck-cli -- list            # connected devices
+cargo run -p superdeck-cli -- info            # model, serial, firmware
+cargo run -p superdeck-cli -- test-pattern    # check image orientation
+cargo run -p superdeck-cli -- events          # print key presses
+cargo run -p superdeck-cli -- --help          # everything else
+```
+
+If you own a Stream Deck, checking it this way helps a lot; see
+[docs/device-protocol.md](docs/device-protocol.md#verification-status). To set
+up a development environment and run the repository checks, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Device permissions
 

@@ -1,0 +1,2 @@
+# Words Clippy's doc_markdown lint shouldn't ask to put in backticks.
+doc-valid-idents = ["SuperDeck", ".."]

@@ -1,0 +1,18 @@
+# synthetic: hand-written from docs/device-protocol.md, not yet checked
+# against hardware. Serial number and firmware version are made up.
+model xl-v2
+
+write 02 00*1023
+feature-get 06 32 -> 06 0c 41 4c 31 32 4b 31 41 30 31 32 33 34 00*18
+feature-get 05 32 -> 05 0c 00 00 00 00 31 2e 30 30 2e 30 31 32 00*18
+feature-set 03 08 32 00*29
+write 02 07 03 00 f8 03 00 00 ab*1016
+write 02 07 03 01 e4 01 01 00 ab*484 00*532
+
+# 32 keys: key 0, then key 31 (bottom right).
+read 36 -> 01 00 20 00 01 00*31
+read 36 -> 01 00 20 00 01 00*30 01
+read 36 -> 01 00 20 00 00*31 01
+read 36 -> 01 00 20 00 00*32
+
+feature-set 03 02 00*30

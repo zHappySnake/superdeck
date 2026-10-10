@@ -1,0 +1,19 @@
+[package]
+name = "superdeck-device"
+description = "Stream Deck USB HID drivers: discovery, hotplug, key input, key images"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+hidapi.workspace = true
+image.workspace = true
+rustix.workspace = true
+thiserror.workspace = true
+udev.workspace = true
+
+[lints]
+workspace = true

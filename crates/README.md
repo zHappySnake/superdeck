@@ -3,13 +3,15 @@
 Rust libraries that make up the SuperDeck core. Every directory here containing
 a `Cargo.toml` is picked up as a workspace member automatically.
 
-| Crate (planned)         | Milestone | Purpose                                             |
+| Crate                   | Milestone | Purpose                                             |
 | ----------------------- | --------- | --------------------------------------------------- |
 | `superdeck-device`      | M1        | Our own HID protocol drivers (on `hidapi`), hotplug |
 | `superdeck-cli`         | M1        | Command-line tool for testing devices by hand       |
 | `superdeck-render`      | M2        | Key image composition: images, SVG, GIF, titles     |
 | `superdeck-core`        | M2        | Profiles, pages, folders, actions, persistence      |
 | `superdeck-plugin-host` | M3        | Stream Deck SDK WebSocket host, plugin processes    |
+
+The M2 and M3 crates don't exist yet.
 
 New crates should inherit shared settings from the workspace:
 
