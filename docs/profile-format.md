@@ -1,10 +1,9 @@
 # Profile format
 
 > [!NOTE]
-> **Status: draft for review.** Nothing reads or writes this format yet.
-> `superdeck-core` (milestone M2) will implement it, together with a JSON
-> Schema and the migration code. Until the first release, version 1 can
-> still change without a migration.
+> **Status: agreed, not implemented yet.** `superdeck-core` (milestone M2)
+> will implement it, together with a JSON Schema and the migration code.
+> Until the first release, version 1 can still change without a migration.
 
 This is how SuperDeck stores profiles, pages, folders, and the actions on
 keys. It's our own format: the official `.streamDeckProfile` files are only
@@ -90,14 +89,15 @@ logs and caches in `$XDG_STATE_HOME` and `$XDG_CACHE_HOME` (see
 }
 ```
 
-| Field           | Type                    | Default  | Meaning                                                                                      |
-| --------------- | ----------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| `formatVersion` | integer                 | required | Format version of this file; see [Versions and migrations](#versions-and-migrations)         |
-| `id`            | UUID                    | required | Profile ID; also the directory name                                                          |
-| `name`          | string                  | required | Name shown in the profile list                                                               |
-| `layout`        | [Layout](#layout)       | required | Key grid the profile is made for                                                             |
-| `applications`  | array of strings        | `[]`     | Application IDs that switch to this profile when focused ([smart profiles](#smart-profiles)) |
-| `pages`         | array of [Page](#pages) | required | At least one page; shown in this order                                                       |
+| Field           | Type                             | Default  | Meaning                                                                                      |
+| --------------- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `formatVersion` | integer                          | required | Format version of this file; see [Versions and migrations](#versions-and-migrations)         |
+| `id`            | UUID                             | required | Profile ID; also the directory name                                                          |
+| `name`          | string                           | required | Name shown in the profile list                                                               |
+| `layout`        | [Layout](#layout)                | required | Key grid the profile is made for                                                             |
+| `applications`  | array of strings                 | `[]`     | Application IDs that switch to this profile when focused ([smart profiles](#smart-profiles)) |
+| `source`        | [Source](#profiles-from-plugins) | none     | Plugin profile this one was installed from                                                   |
+| `pages`         | array of [Page](#pages)          | required | At least one page; shown in this order                                                       |
 
 ### Layout
 
@@ -206,6 +206,13 @@ Values set by plugins at run time (`setTitle`, `setImage`) are not stored.
 Plugins set them again when the key appears (`willAppear`), which is also
 what the official app expects of them.
 
+What a key shows is decided field by field: the user's `appearance` value
+if there is one, else the plugin's run-time value, else the manifest
+default. A title or image the user set by hand always stays, even if a
+plugin keeps updating its own; clearing the field in the property inspector
+hands it back to the plugin. A plugin's `setTitle` or `setImage` without a
+value clears only the plugin's value.
+
 ### Images
 
 A custom image is stored once, in the profile's `images/` directory, as the
@@ -297,6 +304,31 @@ Which profile and page is currently showing is not stored here: it is run
 state, kept in `$XDG_STATE_HOME/superdeck/state.json` so that switching
 pages doesn't rewrite configuration.
 
+## Profiles from plugins
+
+A plugin can ship profiles in its package and switch a device to them
+(`switchToProfile`). They're installed as ordinary profiles that the user
+can edit, rename, and delete like any other, whatever the plugin's manifest
+says about read-only profiles.
+
+```json
+"source": { "plugin": "com.example.streaming", "profile": "Streaming Layout" }
+```
+
+| Field     | Type   | Meaning                                            |
+| --------- | ------ | -------------------------------------------------- |
+| `plugin`  | string | UUID of the plugin that shipped the profile        |
+| `profile` | string | The profile's name in the plugin's `manifest.json` |
+
+- When a plugin is installed, or a device is first seen, each profile the
+  plugin ships for that device type is installed once for each matching
+  device, with `source` set.
+- `switchToProfile` from that plugin finds the profile by `source`, so it
+  still works after the user renames or edits it. If the user deleted it,
+  the request does nothing; deleted profiles aren't installed again.
+- Plugin updates never overwrite an installed copy, and removing the plugin
+  leaves its profiles in place.
+
 ## Smart profiles
 
 A profile's `applications` lists the application IDs that should switch the
@@ -351,15 +383,3 @@ code:
 - `image` paths point into `images/` and the files exist
 - `defaultProfile` is one of the device's `profiles`
 - Multi Action steps are allowed actions
-
-## Open questions
-
-1. **Profiles bundled with plugins.** The SDK lets a plugin ship profiles
-   and switch to them (`switchToProfile`). Should installed ones be ordinary
-   profiles the user can edit, or read-only and refreshed when the plugin
-   updates?
-2. **Run-time titles and images.** The SDK says a `setTitle` without a title
-   resets to the user's title, which suggests a plugin's title shows over the
-   user's; some plugin documentation says the user's title wins. Not a
-   format question (neither is stored), but it decides how `appearance`
-   combines with plugin values, and needs checking against the official app.
