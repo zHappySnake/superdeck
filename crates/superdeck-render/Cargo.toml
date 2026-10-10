@@ -1,0 +1,21 @@
+[package]
+name = "superdeck-render"
+description = "Key image composition for SuperDeck: images, SVG, animated GIF, and titles"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+# The bundled Noto Sans fonts in fonts/ are under OFL-1.1 (fonts/OFL.txt).
+
+[dependencies]
+cosmic-text.workspace = true
+data-url.workspace = true
+image.workspace = true
+resvg.workspace = true
+sys-locale.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

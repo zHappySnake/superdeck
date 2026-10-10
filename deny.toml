@@ -7,6 +7,14 @@ all-features = true
 [advisories]
 version = 2
 yanked = "deny"
+# Unmaintained, not vulnerable. superdeck-render keeps resvg on the release
+# whose font database matches cosmic-text's (fontdb 0.23), so SVG text and
+# titles share one set of fonts. Upgrade resvg once cosmic-text moves to a
+# newer fontdb, and drop these.
+ignore = [
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser, via fontdb 0.23 in cosmic-text and resvg 0.47" },
+  { id = "RUSTSEC-2026-0206", reason = "rustybuzz, via resvg 0.47; see above" },
+]
 
 [licenses]
 version = 2

@@ -62,13 +62,32 @@ and for recording captures with `--record`. Not shipped to users.
 
 ### `crates/superdeck-render`
 
-Turns an action's visual state into the exact bitmap a device key needs: the
-plugin-supplied image (PNG, JPEG, SVG, GIF frame, or data URL) plus the title
-overlay drawn with the title settings. Text is shaped and laid out with
-`cosmic-text`. The default font is a bundled copy of Noto Sans (OFL-1.1), so
-keys look identical on every distribution; users can pick any installed font.
-Rendering is pure and deterministic, so it can be snapshot-tested without
-hardware.
+Turns a key's image and title into the bitmap the key shows. It knows
+nothing about devices, profiles, or plugins.
+
+- A `Renderer` holds the fonts and is created once. It loads a `KeyImage`
+  from bytes or a `data:` URL (as sent by `setImage`), recognizing PNG, JPEG,
+  BMP, still or animated GIF, and SVG from the content rather than the
+  declared type. Loaded images are kept premultiplied and scaled down to at
+  most 288 px, so they can be rendered at any key size cheaply. Decoding has
+  size limits, and SVGs can't reference files.
+- `render(image, title, style, size)` draws the image scaled to fit and
+  centered on black, then the title, and returns an upright RGB image, or
+  one per frame with its delay for an animation. `superdeck-device` then
+  scales, rotates, and encodes it for the model.
+- Titles follow the SDK's title parameters (font, size, bold, italic,
+  underline, top/middle/bottom, color, shown or hidden). Text is shaped and
+  laid out with `cosmic-text`; lines are centered and not wrapped, and get a
+  thin dark outline so they stay readable on any image. Font sizes are
+  pixels on a 72 px key and scale with the key.
+- The default font is a bundled copy of Noto Sans (OFL-1.1), so keys look
+  identical on every distribution; users can pick any installed font. SVG
+  text uses the same font database, through `resvg`.
+
+Rendering with only the bundled fonts is deterministic, so it is tested
+against snapshot images without hardware. The title metrics (size unit,
+margins, outline) are our own choices and still need comparing with the
+official app.
 
 ### `crates/superdeck-core`
 

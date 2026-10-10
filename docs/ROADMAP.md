@@ -158,6 +158,9 @@ been checked on hardware and has a recorded capture (see
 - Core actions (navigation, Multi Action, brightness, sleep)
 - Headless run mode that drives a device from a profile file
 
+Status: key rendering (`superdeck-render`) is done and checked on an MK.2;
+the data model, profile format, core actions, and headless mode are next.
+
 ### M3: Plugin host and SDK
 
 - `sdk/protocol` JSON Schemas as the single source of truth

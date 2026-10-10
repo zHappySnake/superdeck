@@ -11,7 +11,7 @@ a `Cargo.toml` is picked up as a workspace member automatically.
 | `superdeck-core`        | M2        | Profiles, pages, folders, actions, persistence      |
 | `superdeck-plugin-host` | M3        | Stream Deck SDK WebSocket host, plugin processes    |
 
-The M2 and M3 crates don't exist yet.
+`superdeck-core` and `superdeck-plugin-host` don't exist yet.
 
 New crates should inherit shared settings from the workspace:
 

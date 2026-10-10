@@ -5,9 +5,9 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha.** The device layer (milestone M1) is in place, with a
-> command-line tool for testing devices; there's no app yet. See the
-> [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer (milestone M1) and key rendering
+> are in place, with a command-line tool for testing devices; there's no app
+> yet. See the [roadmap](docs/ROADMAP.md) for what comes next.
 
 ## Goals
 
@@ -128,6 +128,10 @@ version. See [LICENSE](LICENSE).
 Exception: the plugin SDK and protocol schemas in [`sdk/`](sdk/) are licensed
 under either the [MIT](sdk/LICENSE-MIT) or [Apache-2.0](sdk/LICENSE-APACHE)
 license, at your option, so plugins can use any license.
+
+The bundled Noto Sans fonts in
+[`crates/superdeck-render/fonts/`](crates/superdeck-render/fonts/) are under
+the [SIL Open Font License 1.1](crates/superdeck-render/fonts/OFL.txt).
 
 ## Trademarks
 
