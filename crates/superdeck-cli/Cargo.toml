@@ -17,6 +17,7 @@ anyhow.workspace = true
 clap.workspace = true
 image.workspace = true
 superdeck-device.workspace = true
+superdeck-render.workspace = true
 
 [lints]
 workspace = true

@@ -93,6 +93,8 @@ cargo run -p superdeck-cli -- list            # connected devices
 cargo run -p superdeck-cli -- info            # model, serial, firmware
 cargo run -p superdeck-cli -- test-pattern    # check image orientation
 cargo run -p superdeck-cli -- events          # print key presses
+cargo run -p superdeck-cli -- render -i icon.svg -t Mute --align bottom
+                                              # draw a key as the app will
 cargo run -p superdeck-cli -- --help          # everything else
 ```
 

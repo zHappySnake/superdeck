@@ -811,6 +811,7 @@ dependencies = [
  "clap",
  "image",
  "superdeck-device",
+ "superdeck-render",
 ]
 
 [[package]]
