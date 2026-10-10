@@ -61,6 +61,37 @@ fn mk2() {
     finish(device, &replay);
 }
 
+/// Real traffic from three CLI runs, each opening the device again.
+#[test]
+fn mk2_recorded() {
+    let (mut device, replay) = replay("mk2-recorded.cap");
+    assert_eq!(device.serial_number().unwrap(), "AL12K1A01234");
+    assert_eq!(device.firmware_version().unwrap(), "1.02.000");
+
+    let mut device = Device::with_transport(Model::Mk2, Box::new(replay.clone())).unwrap();
+    device.set_brightness(50).unwrap();
+
+    let mut device = Device::with_transport(Model::Mk2, Box::new(replay.clone())).unwrap();
+    let mut all = Vec::new();
+    for _ in 0..8 {
+        all.extend(events(&mut device));
+    }
+    assert_eq!(
+        all,
+        [
+            KeyEvent::Down(0),
+            KeyEvent::Up(0),
+            KeyEvent::Down(14),
+            KeyEvent::Up(14),
+            KeyEvent::Down(0),
+            KeyEvent::Down(14),
+            KeyEvent::Up(14),
+            KeyEvent::Up(0)
+        ]
+    );
+    replay.finish().unwrap();
+}
+
 #[test]
 fn xl() {
     let (device, replay) = standard_session("xl.cap", Model::XlV2, "AL12K1A01234", "1.00.012", 31);
