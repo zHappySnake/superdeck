@@ -20,7 +20,7 @@ jobs:
     name: Rust
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # rustup installs the toolchain pinned in rust-toolchain.toml on first use.
       - name: Detect crates
@@ -64,7 +64,7 @@ jobs:
     name: JS / TS
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
