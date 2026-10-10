@@ -132,3 +132,5 @@ assets.
   Python/GTK Stream Deck app for Linux
 - [python-elgato-streamdeck](https://github.com/abcminiuser/python-elgato-streamdeck):
   Python library, a valuable reference for the HID protocol
+- [elgato-streamdeck](https://crates.io/crates/elgato-streamdeck): Rust
+  library for the same devices, another protocol reference

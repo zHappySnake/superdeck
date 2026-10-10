@@ -30,9 +30,12 @@ roadmap explains _what_ and _when_; this file explains _how_.
 
 ### `crates/superdeck-device`
 
-Talks to the hardware over `hidraw`, via `hidapi` or the `elgato-streamdeck`
-crate (to be decided in M1). It knows each model's key layout, image size and
-orientation, image format, and report layout. It produces a stream of input
+Our own implementation of the Stream Deck USB HID protocol. It does I/O
+through the `hidapi` crate (hidraw backend) and watches for devices being
+plugged in or removed with a `udev` monitor. Each model is a small driver
+describing its key layout, image size and orientation, image format, and
+report layout; the protocol logic is separated from I/O so it can be tested
+against recorded USB captures. It produces a stream of input
 events (key down/up, later dial/touch) and accepts output commands (set key
 image, brightness, reset). It has no knowledge of profiles or plugins.
 
@@ -40,14 +43,19 @@ image, brightness, reset). It has no knowledge of profiles or plugins.
 
 Turns an action's visual state into the exact bitmap a device key needs: the
 plugin-supplied image (PNG, JPEG, SVG, GIF frame, or data URL) plus the title
-overlay drawn with the title settings. Rendering is pure and deterministic, so
-it can be snapshot-tested without hardware.
+overlay drawn with the title settings. Text is shaped and laid out with
+`cosmic-text`. The default font is a bundled copy of Noto Sans (OFL-1.1), so
+keys look identical on every distribution; users can pick any installed font.
+Rendering is pure and deterministic, so it can be snapshot-tested without
+hardware.
 
 ### `crates/superdeck-core`
 
 The application model: devices → profiles → pages → keys → action instances,
 plus folders, Multi Actions, and the core navigation actions. It owns
-persistence, undo/redo, smart profile switching, and dispatching input events
+persistence (our own versioned JSON format with migrations; the official
+`.streamDeckProfile` format is handled only by import/export converters),
+undo/redo, smart profile switching, and dispatching input events
 to the core or to plugins. It exposes an async API that both the Tauri app and
 a headless mode can drive.
 
@@ -57,8 +65,10 @@ Implements the Stream Deck SDK host side:
 
 - discovers plugins (bundled, then user-installed) and validates `manifest.json`
 - spawns each plugin with the documented command-line arguments (`-port`,
-  `-pluginUUID`, `-registerEvent`, `-info`), using the shipped Node.js
-  runtime for `CodePath` JavaScript entries
+  `-pluginUUID`, `-registerEvent`, `-info`). JavaScript `CodePath` entries
+  all run on Node.js 24 LTS, whatever version the manifest requests: the
+  bundled runtime in Flatpak/AppImage, or the system `nodejs` (24 or newer,
+  checked before starting plugins) in native packages
 - runs one WebSocket server on `127.0.0.1` at a random port, accepts
   registrations from plugins and property inspectors, and routes events and
   commands between them and the core

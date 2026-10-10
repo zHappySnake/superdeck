@@ -5,7 +5,7 @@ a `Cargo.toml` is picked up as a workspace member automatically.
 
 | Crate (planned)         | Milestone | Purpose                                             |
 | ----------------------- | --------- | --------------------------------------------------- |
-| `superdeck-device`      | M1        | USB HID drivers for each Stream Deck model, hotplug |
+| `superdeck-device`      | M1        | Our own HID protocol drivers (on `hidapi`), hotplug |
 | `superdeck-cli`         | M1        | Command-line tool for testing devices by hand       |
 | `superdeck-render`      | M2        | Key image composition: images, SVG, GIF, titles     |
 | `superdeck-core`        | M2        | Profiles, pages, folders, actions, persistence      |

@@ -12,18 +12,23 @@ actions, same plugins. Nothing phones home.
 
 ## Decisions
 
-| Topic              | Decision                                                                                            |
-| ------------------ | --------------------------------------------------------------------------------------------------- |
-| Language (backend) | Rust (edition 2024), toolchain pinned in `rust-toolchain.toml`                                      |
-| UI                 | Tauri v2 + Svelte 5 + TypeScript, rendered by the system WebKitGTK                                  |
-| Process model      | One process (core + UI + tray); plugins run as child processes                                      |
-| Plugin API         | Compatible with the Stream Deck SDK (WebSocket protocol, `manifest.json`, HTML property inspectors) |
-| Plugin runtime     | Node.js, shipped with the app, used by bundled and third-party plugins                              |
-| Bundled plugins    | TypeScript packages in `plugins/`, depending only on `@superdeck/sdk`                               |
-| Licensing          | App: GPL-3.0-or-later. `sdk/`: MIT OR Apache-2.0                                                    |
-| Packaging          | Flatpak, AppImage, `.deb`, `.rpm`, AUR, Nix                                                         |
-| v1 hardware        | Key-only devices (Original, MK.2, Mini, XL, Neo keys, Module)                                       |
-| App ID             | `io.github.zhappysnake.superdeck`                                                                   |
+| Topic              | Decision                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Language (backend) | Rust (edition 2024), toolchain pinned in `rust-toolchain.toml`                                                                   |
+| UI                 | Tauri v2 + Svelte 5 + TypeScript, rendered by the system WebKitGTK                                                               |
+| Process model      | One process (core + UI + tray); plugins run as child processes                                                                   |
+| Plugin API         | Compatible with the Stream Deck SDK (WebSocket protocol, `manifest.json`, HTML property inspectors)                              |
+| Plugin runtime     | Node.js 24 LTS for every plugin, whatever `Nodejs.Version` the manifest requests; move to the next LTS when it's ready           |
+| Node.js shipping   | Flatpak and AppImage bundle Node 24; `.deb`/`.rpm`/AUR/Nix depend on the system `nodejs` (>= 24), checked at startup             |
+| Bundled plugins    | TypeScript packages in `plugins/`, depending only on `@superdeck/sdk`                                                            |
+| Licensing          | App: GPL-3.0-or-later. `sdk/`: MIT OR Apache-2.0                                                                                 |
+| Packaging          | Flatpak, AppImage, `.deb`, `.rpm`, AUR, Nix                                                                                      |
+| v1 hardware        | Key-only devices (Original, MK.2, Mini, XL, Neo keys, Module)                                                                    |
+| App name and ID    | SuperDeck, `io.github.zhappysnake.superdeck`                                                                                     |
+| Device driver      | Our own protocol implementation in `superdeck-device`, on the `hidapi` crate (hidraw backend), with the `udev` crate for hotplug |
+| Key title text     | `cosmic-text` (shaping, bidi, fallback); bundled Noto Sans (OFL-1.1) as the default font; any installed font selectable          |
+| Profile storage    | Our own documented, versioned JSON format; `.streamDeckProfile` import/export through converters                                 |
+| Contributions      | Inbound = outbound licensing, DCO sign-off (`git commit -s`) required, no CLA                                                    |
 
 ## Feature parity target
 
@@ -110,16 +115,16 @@ actions, as in the official app. Everything else is a plugin.
 
 These need design work early because the official app doesn't face them.
 
-| Problem                                | Plan                                                                                                                              |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| HID permissions                        | udev rule with `TAG+="uaccess"` installed by packages; Flatpak docs explain the host-side rule                                    |
-| Sending hotkeys and text on Wayland    | XDG RemoteDesktop portal / libei where available; `uinput` fallback; XTest on X11                                                 |
-| Focused app detection (smart profiles) | Per-environment backends: X11 (EWMH), KDE (KWin script), GNOME (Shell extension), wlroots (`foreign-toplevel`), Hyprland/Sway IPC |
-| Media keys and volume                  | MPRIS over D-Bus; PipeWire (`wpctl`) / PulseAudio                                                                                 |
-| Tray icon                              | StatusNotifierItem (GNOME needs the AppIndicator extension)                                                                       |
-| Autostart                              | XDG autostart; Background portal under Flatpak                                                                                    |
-| Shipping Node.js for plugins           | Bundle a pinned Node in AppImage/Flatpak; distro packages may depend on the system `nodejs`                                       |
-| Plugins assuming Windows/macOS         | Treat Linux as a supported platform when reading `manifest.json`; shim platform-specific fields                                   |
+| Problem                                | Plan                                                                                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| HID permissions                        | udev rule with `TAG+="uaccess"` installed by packages; Flatpak docs explain the host-side rule                                                |
+| Sending hotkeys and text on Wayland    | XDG RemoteDesktop portal / libei where available; `uinput` fallback; XTest on X11                                                             |
+| Focused app detection (smart profiles) | Per-environment backends: X11 (EWMH), KDE (KWin script), GNOME (Shell extension), wlroots (`foreign-toplevel`), Hyprland/Sway IPC             |
+| Media keys and volume                  | MPRIS over D-Bus; PipeWire (`wpctl`) / PulseAudio                                                                                             |
+| Tray icon                              | StatusNotifierItem (GNOME needs the AppIndicator extension)                                                                                   |
+| Autostart                              | XDG autostart; Background portal under Flatpak                                                                                                |
+| Shipping Node.js for plugins           | Bundle Node 24 in Flatpak/AppImage; native packages depend on the distro `nodejs` and the host refuses to start plugins on a version below 24 |
+| Plugins assuming Windows/macOS         | Treat Linux as a supported platform when reading `manifest.json`; shim platform-specific fields                                               |
 
 ## Milestones
 
@@ -130,15 +135,20 @@ dev tooling, CI.
 
 ### M1: Device layer
 
-- `superdeck-device` crate: enumerate, hotplug, read key events, write key
-  images, brightness, reset, serial/firmware queries for every v1 device
+- `superdeck-device` crate, our own protocol implementation on `hidapi`
+  (hidraw) and `udev`: enumerate, hotplug, read key events, write key images,
+  brightness, reset, serial/firmware queries for every v1 device
+- Per-model protocol tests against recorded USB captures, so device logic is
+  testable without hardware
 - `superdeck-cli` for manual testing (`list`, `fill`, `image`, `brightness`, `events`)
 - Image pipeline per device (size, rotation, mirroring, JPEG/BMP encoding)
 
 ### M2: Core model and rendering
 
-- Profile/page/folder/action data model with versioned on-disk format (XDG paths)
-- Key rendering: plugin image + title overlay, fonts, SVG, animated GIF
+- Profile/page/folder/action data model; versioned JSON on-disk format with a
+  JSON Schema and migrations, documented in `docs/profile-format.md`
+- Key rendering: plugin image + title overlay (`cosmic-text`, bundled Noto
+  Sans), SVG, animated GIF
 - Core actions (navigation, Multi Action, brightness, sleep)
 - Headless run mode that drives a device from a profile file
 
@@ -180,11 +190,5 @@ plugins, translations.
 
 ## Open questions
 
-- Use the existing `elgato-streamdeck` crate (MPL-2.0) for device I/O, or
-  write our own? Decide at the start of M1.
-- Text rendering stack for key titles (`cosmic-text` vs. `ab_glyph`), and which
-  default font, since the official font can't be used.
-- Which Node.js major version to ship, so it covers the `Nodejs.Version`
-  values current plugins request.
-- Exact on-disk profile format: mirror the official layout to make
-  import/export trivial, or keep our own and convert?
+None right now. Questions resolved so far are recorded in
+[Decisions](#decisions). Raise new ones as issues.

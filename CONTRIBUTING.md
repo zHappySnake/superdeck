@@ -48,7 +48,7 @@ Pull requests adding them will be closed.
 | Tool            | Version                         | How to get it                          |
 | --------------- | ------------------------------- | -------------------------------------- |
 | Rust            | pinned in `rust-toolchain.toml` | [rustup](https://rustup.rs)            |
-| Node.js         | 22 LTS or newer (`.nvmrc`)      | distro package, nvm, fnm, or mise      |
+| Node.js         | 24 LTS (`.nvmrc`)               | distro package, nvm, fnm, or mise      |
 | pnpm            | pinned in `package.json`        | `corepack enable`                      |
 | just (optional) | any recent                      | distro package or `cargo install just` |
 
@@ -178,6 +178,8 @@ belongs in a plugin.
 ## Commits and pull requests
 
 - Branch from `main`; keep pull requests focused on one change.
+- Sign off every commit (`git commit -s`); see
+  [Developer Certificate of Origin](#developer-certificate-of-origin).
 - Use [Conventional Commits](https://www.conventionalcommits.org/) for
   messages, scoped by area where it helps:
   `feat(device): support Stream Deck Neo`,
@@ -196,6 +198,21 @@ of the directory it goes into ("inbound = outbound"): GPL-3.0-or-later for
 most of the repository, MIT OR Apache-2.0 for `sdk/`. No CLA is required. You
 keep the copyright to your work. Only contribute work you have the right to
 license this way.
+
+### Developer Certificate of Origin
+
+Every commit must carry a `Signed-off-by:` line with your real name and email,
+certifying the [Developer Certificate of Origin 1.1](https://developercertificate.org/):
+that you wrote the change or otherwise have the right to submit it under the
+project's licenses. Git adds the line for you:
+
+```sh
+git commit -s -m "fix(device): handle short reads"
+```
+
+To sign off commits you already made on your branch, run
+`git rebase --signoff main` and force-push the branch. A CI check fails pull
+requests that contain commits without a sign-off.
 
 When adding a Rust or npm dependency, check that its license is
 GPL-3.0-compatible (`just deny` checks Rust crates against `deny.toml`). For
