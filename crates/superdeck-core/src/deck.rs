@@ -10,6 +10,8 @@
 //! without hardware.
 
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde_json::{Map, Value};
@@ -17,7 +19,7 @@ use serde_json::{Map, Value};
 use crate::ids::{InstanceId, ProfileId};
 use crate::model::{
     Action, ActionInstance, BrightnessMode, Color, CoreAction, FontStyle, ImagePath, Keys,
-    Position, Profile, TitleAlignment,
+    Position, Profile, Resources, TitleAlignment,
 };
 
 /// Title size of keys the user hasn't customized.
@@ -28,6 +30,9 @@ const PAGE_INDICATOR_FONT_SIZE: f64 = 20.0;
 
 /// The back key of an open folder.
 const BACK_KEY: Position = Position::new(0, 0);
+
+/// How long `showAlert` and `showOk` show on a key.
+pub const FLASH: Duration = Duration::from_millis(1500);
 
 /// Device settings a deck needs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,8 +92,12 @@ pub struct PluginEvent {
     pub action: String,
     /// The instance's settings.
     pub settings: Map<String, Value>,
+    /// The instance's resources.
+    pub resources: Resources,
     /// The instance's current state.
     pub state: u8,
+    /// How many states the action has, from its manifest: 1 or 2.
+    pub states: u8,
     /// The key, or `None` for a Multi Action step.
     pub position: Option<Position>,
 }
@@ -104,6 +113,10 @@ pub enum PluginEventKind {
     WillAppear,
     /// `willDisappear`: the key is no longer visible.
     WillDisappear,
+    /// `didReceiveSettings`, built by [`Deck::describe`].
+    DidReceiveSettings,
+    /// `didReceiveResources`, built by [`Deck::describe`].
+    DidReceiveResources,
 }
 
 /// What a key shows: an image and a title, with every title setting
@@ -155,6 +168,8 @@ pub enum FaceImage {
     DataUrl(String),
     /// One of SuperDeck's icons.
     Builtin(Icon),
+    /// An image file of a plugin, named in its manifest.
+    File(PathBuf),
 }
 
 /// SuperDeck's own icons, for the core actions.
@@ -171,6 +186,10 @@ pub enum Icon {
     MultiActionSwitch,
     Brightness,
     Sleep,
+    /// Flashed by `showAlert`.
+    Alert,
+    /// Flashed by `showOk`.
+    Ok,
 }
 
 impl Icon {
@@ -188,6 +207,8 @@ impl Icon {
             Icon::MultiActionSwitch => include_bytes!("../icons/multi-action-switch.svg"),
             Icon::Brightness => include_bytes!("../icons/brightness.svg"),
             Icon::Sleep => include_bytes!("../icons/sleep.svg"),
+            Icon::Alert => include_bytes!("../icons/alert.svg"),
+            Icon::Ok => include_bytes!("../icons/ok.svg"),
         }
     }
 
@@ -206,6 +227,44 @@ impl Icon {
         })
     }
 }
+
+/// What a plugin's manifest says about one of its actions.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActionDefaults {
+    /// How each state looks: one or two.
+    pub states: Vec<StateDefaults>,
+    /// Switch a two-state action to its other state when its key is
+    /// released; the manifest's `DisableAutomaticStates` turns this off.
+    pub automatic_states: bool,
+}
+
+impl Default for ActionDefaults {
+    fn default() -> Self {
+        Self {
+            states: vec![StateDefaults::default()],
+            automatic_states: true,
+        }
+    }
+}
+
+/// How a state looks until the plugin or the user changes it. `None`
+/// leaves SuperDeck's default.
+#[derive(Debug, Clone, Default, PartialEq)]
+#[expect(missing_docs, reason = "as in KeyFace")]
+pub struct StateDefaults {
+    pub image: Option<FaceImage>,
+    pub title: Option<String>,
+    pub show_title: Option<bool>,
+    pub title_alignment: Option<TitleAlignment>,
+    pub font_family: Option<String>,
+    pub font_size: Option<f64>,
+    pub font_style: Option<FontStyle>,
+    pub font_underline: Option<bool>,
+    pub title_color: Option<Color>,
+}
+
+/// The installed plugins' actions, by plugin UUID and action UUID.
+pub type Catalog = HashMap<(String, String), ActionDefaults>;
 
 /// What a plugin set on an instance at run time, for one state.
 #[derive(Debug, Clone, Default)]
@@ -245,6 +304,9 @@ pub struct Deck {
     last_activity: Instant,
     /// Steps in the order they run; dues never decrease.
     queue: Vec<Scheduled>,
+    catalog: Arc<Catalog>,
+    /// Instances showing an alert or a check mark, until when.
+    flashes: HashMap<InstanceId, (Icon, Instant)>,
 }
 
 impl Deck {
@@ -264,7 +326,23 @@ impl Deck {
             sleeping: false,
             last_activity: now,
             queue: Vec::new(),
+            catalog: Arc::new(Catalog::new()),
+            flashes: HashMap::new(),
         }
+    }
+
+    /// Uses the manifests' defaults for plugin actions: their images and
+    /// titles, how many states they have, and whether those switch by
+    /// themselves.
+    #[must_use]
+    pub fn with_catalog(mut self, catalog: Arc<Catalog>) -> Self {
+        self.catalog = catalog;
+        self
+    }
+
+    fn defaults(&self, plugin: &crate::model::PluginAction) -> Option<&ActionDefaults> {
+        self.catalog
+            .get(&(plugin.plugin.clone(), plugin.action.clone()))
     }
 
     /// The profile, with any changes made while running.
@@ -333,11 +411,7 @@ impl Deck {
         let id = instance.id;
         let held = match &instance.action {
             Action::Plugin(_) => {
-                effects.push(plugin_event(
-                    PluginEventKind::KeyDown,
-                    instance,
-                    Some(position),
-                ));
+                effects.push(self.plugin_event(PluginEventKind::KeyDown, instance, Some(position)));
                 Held::Instance(id)
             }
             Action::Core(core) => {
@@ -359,11 +433,21 @@ impl Deck {
         if let Some(Held::Instance(id)) = self.held.remove(&position)
             && let Some(instance) = self.profile.instance(id)
         {
-            effects.push(plugin_event(
-                PluginEventKind::KeyUp,
-                instance,
-                Some(position),
-            ));
+            let event = self.plugin_event(PluginEventKind::KeyUp, instance, Some(position));
+            let toggles = match (&event, &instance.action) {
+                (Effect::Plugin(event), Action::Plugin(plugin)) => {
+                    event.states == 2
+                        && self
+                            .defaults(plugin)
+                            .is_none_or(|defaults| defaults.automatic_states)
+                }
+                _ => false,
+            };
+            effects.push(event);
+            if toggles {
+                let state = 1 - instance.state.min(1);
+                effects.extend(self.set_state(id, state));
+            }
         }
         effects
     }
@@ -372,6 +456,16 @@ impl Deck {
     /// going to sleep.
     pub fn poll(&mut self, now: Instant) -> Vec<Effect> {
         let mut effects = Vec::new();
+        let ended: Vec<InstanceId> = self
+            .flashes
+            .iter()
+            .filter(|(_, (_, until))| *until <= now)
+            .map(|(id, _)| *id)
+            .collect();
+        for id in ended {
+            self.flashes.remove(&id);
+            self.redraw(&mut effects, id);
+        }
         let due = self.queue.partition_point(|scheduled| scheduled.due <= now);
         for scheduled in self.queue.drain(..due).collect::<Vec<_>>() {
             self.run_step(&mut effects, &scheduled.step, now);
@@ -389,10 +483,8 @@ impl Deck {
     #[must_use]
     pub fn next_deadline(&self) -> Option<Instant> {
         let step = self.queue.first().map(|scheduled| scheduled.due);
-        match (step, self.sleep_at()) {
-            (Some(a), Some(b)) => Some(a.min(b)),
-            (a, b) => a.or(b),
-        }
+        let flash = self.flashes.values().map(|(_, until)| *until).min();
+        [step, flash, self.sleep_at()].into_iter().flatten().min()
     }
 
     fn sleep_at(&self) -> Option<Instant> {
@@ -461,6 +553,97 @@ impl Deck {
         }
     }
 
+    /// A plugin saved an instance's resources (`setResources`).
+    pub fn set_resources(&mut self, instance: InstanceId, resources: Resources) -> Vec<Effect> {
+        match self
+            .profile
+            .instance_mut(instance)
+            .map(|found| &mut found.action)
+        {
+            Some(Action::Plugin(plugin)) if plugin.resources != resources => {
+                plugin.resources = resources;
+                vec![Effect::ProfileChanged]
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    /// A plugin asked to show a warning on an instance's key for a moment
+    /// (`showAlert`).
+    pub fn show_alert(&mut self, instance: InstanceId, now: Instant) -> Vec<Effect> {
+        self.flash(instance, Icon::Alert, now)
+    }
+
+    /// A plugin asked to show a check mark on an instance's key for a
+    /// moment (`showOk`).
+    pub fn show_ok(&mut self, instance: InstanceId, now: Instant) -> Vec<Effect> {
+        self.flash(instance, Icon::Ok, now)
+    }
+
+    fn flash(&mut self, instance: InstanceId, icon: Icon, now: Instant) -> Vec<Effect> {
+        let mut effects = Vec::new();
+        if self.sleeping || self.profile.instance(instance).is_none() {
+            return effects;
+        }
+        self.flashes.insert(instance, (icon, now + FLASH));
+        self.redraw(&mut effects, instance);
+        effects
+    }
+
+    /// `willAppear` for the plugin's actions that are showing, for a plugin
+    /// that just connected.
+    #[must_use]
+    pub fn announce(&self, plugin: &str) -> Vec<Effect> {
+        self.grid()
+            .iter()
+            .filter(|(position, _)| !(self.in_folder() && **position == BACK_KEY))
+            .filter(|(_, instance)| {
+                matches!(&instance.action, Action::Plugin(action) if action.plugin == plugin)
+            })
+            .map(|(&position, instance)| {
+                self.plugin_event(PluginEventKind::WillAppear, instance, Some(position))
+            })
+            .collect()
+    }
+
+    /// Whether an instance in the profile is an action of `plugin`.
+    #[must_use]
+    pub fn owns(&self, plugin: &str, instance: InstanceId) -> bool {
+        matches!(
+            self.profile.instance(instance).map(|found| &found.action),
+            Some(Action::Plugin(action)) if action.plugin == plugin
+        )
+    }
+
+    /// An event about any plugin instance in the profile, such as the
+    /// answer to `getSettings`: its key if it's on one, whether or not it's
+    /// showing, or no key for a Multi Action step.
+    #[must_use]
+    pub fn describe(&self, kind: PluginEventKind, instance: InstanceId) -> Option<PluginEvent> {
+        fn find(keys: &Keys, id: InstanceId) -> Option<(Option<Position>, &ActionInstance)> {
+            for (&position, instance) in keys {
+                if instance.id == id {
+                    return Some((Some(position), instance));
+                }
+                if let Some(CoreAction::Folder { keys }) = instance.core()
+                    && let Some(found) = find(keys, id)
+                {
+                    return Some(found);
+                }
+                if let Some(step) = instance.children().find(|child| child.id == id) {
+                    return Some((None, step));
+                }
+            }
+            None
+        }
+        let (position, instance) = self
+            .profile
+            .pages
+            .iter()
+            .find_map(|page| find(&page.keys, instance))?;
+        self.event(kind, instance, position)
+    }
+
     fn set_plugin_face(
         &mut self,
         instance: InstanceId,
@@ -510,6 +693,13 @@ impl Deck {
     }
 
     fn face_of(&self, instance: &ActionInstance) -> KeyFace {
+        if let Some((icon, _)) = self.flashes.get(&instance.id) {
+            return KeyFace {
+                image: Some(FaceImage::Builtin(*icon)),
+                show_title: false,
+                ..KeyFace::default()
+            };
+        }
         let mut face = KeyFace::default();
         match &instance.action {
             Action::Core(CoreAction::PageIndicator) => {
@@ -518,10 +708,20 @@ impl Deck {
                 face.font_size = PAGE_INDICATOR_FONT_SIZE;
             }
             Action::Core(core) => face.image = Icon::for_action(core).map(FaceImage::Builtin),
-            Action::Plugin(_) => {
+            Action::Plugin(action) => {
+                if let Some(defaults) = self
+                    .defaults(action)
+                    .and_then(|defaults| defaults.states.get(usize::from(instance.state)))
+                {
+                    apply_defaults(&mut face, defaults);
+                }
                 if let Some(plugin) = self.plugin_faces.get(&(instance.id, instance.state)) {
-                    face.image = plugin.image.clone().map(FaceImage::DataUrl);
-                    face.title = plugin.title.clone().unwrap_or_default();
+                    if let Some(image) = &plugin.image {
+                        face.image = Some(FaceImage::DataUrl(image.clone()));
+                    }
+                    if let Some(title) = &plugin.title {
+                        face.title.clone_from(title);
+                    }
                 }
             }
         }
@@ -593,7 +793,7 @@ impl Deck {
     fn appear(&self, effects: &mut Vec<Effect>, kind: PluginEventKind) {
         for (&position, instance) in self.grid() {
             if matches!(instance.action, Action::Plugin(_)) {
-                effects.push(plugin_event(kind, instance, Some(position)));
+                effects.push(self.plugin_event(kind, instance, Some(position)));
             }
         }
     }
@@ -702,33 +902,82 @@ impl Deck {
         }
     }
 
+    /// An event for the plugin that owns `instance`, a plugin action.
+    fn plugin_event(
+        &self,
+        kind: PluginEventKind,
+        instance: &ActionInstance,
+        position: Option<Position>,
+    ) -> Effect {
+        Effect::Plugin(
+            self.event(kind, instance, position)
+                .expect("only plugin actions get plugin events"),
+        )
+    }
+
+    fn event(
+        &self,
+        kind: PluginEventKind,
+        instance: &ActionInstance,
+        position: Option<Position>,
+    ) -> Option<PluginEvent> {
+        let Action::Plugin(plugin) = &instance.action else {
+            return None;
+        };
+        let states = self
+            .defaults(plugin)
+            .map_or(1, |defaults| defaults.states.len().clamp(1, 2));
+        Some(PluginEvent {
+            kind,
+            instance: instance.id,
+            plugin: plugin.plugin.clone(),
+            action: plugin.action.clone(),
+            settings: plugin.settings.clone(),
+            resources: plugin.resources.clone(),
+            state: instance.state,
+            states: u8::try_from(states).expect("1 or 2"),
+            position,
+        })
+    }
+
     fn run_step(&mut self, effects: &mut Vec<Effect>, step: &ActionInstance, now: Instant) {
         match &step.action {
             Action::Plugin(_) => {
-                effects.push(plugin_event(PluginEventKind::KeyDown, step, None));
-                effects.push(plugin_event(PluginEventKind::KeyUp, step, None));
+                effects.push(self.plugin_event(PluginEventKind::KeyDown, step, None));
+                effects.push(self.plugin_event(PluginEventKind::KeyUp, step, None));
             }
             Action::Core(core) => self.run_core(effects, step.id, None, core, now),
         }
     }
 }
 
-/// An event for the plugin that owns `instance`, a plugin action.
-fn plugin_event(
-    kind: PluginEventKind,
-    instance: &ActionInstance,
-    position: Option<Position>,
-) -> Effect {
-    let Action::Plugin(plugin) = &instance.action else {
-        unreachable!("only plugin actions get plugin events");
-    };
-    Effect::Plugin(PluginEvent {
-        kind,
-        instance: instance.id,
-        plugin: plugin.plugin.clone(),
-        action: plugin.action.clone(),
-        settings: plugin.settings.clone(),
-        state: instance.state,
-        position,
-    })
+/// A manifest's defaults for a state, over SuperDeck's.
+fn apply_defaults(face: &mut KeyFace, defaults: &StateDefaults) {
+    if let Some(image) = &defaults.image {
+        face.image = Some(image.clone());
+    }
+    if let Some(title) = &defaults.title {
+        face.title.clone_from(title);
+    }
+    if let Some(show) = defaults.show_title {
+        face.show_title = show;
+    }
+    if let Some(alignment) = defaults.title_alignment {
+        face.title_alignment = alignment;
+    }
+    if let Some(family) = &defaults.font_family {
+        face.font_family = Some(family.clone());
+    }
+    if let Some(size) = defaults.font_size {
+        face.font_size = size;
+    }
+    if let Some(style) = defaults.font_style {
+        face.font_style = style;
+    }
+    if let Some(underline) = defaults.font_underline {
+        face.font_underline = underline;
+    }
+    if let Some(color) = defaults.title_color {
+        face.title_color = color;
+    }
 }

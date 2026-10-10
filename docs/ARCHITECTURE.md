@@ -116,7 +116,13 @@ a headless mode can drive.
   `next_deadline`. A key's release always goes to the action it pressed,
   even after a page change, and the press that wakes a sleeping device does
   nothing else.
-- The core actions' icons are our own SVGs in `crates/superdeck-core/icons/`.
+- Given a catalog of the installed plugins' actions, it shows their
+  manifest images and titles until the plugin or the user changes them,
+  switches two-state actions when their key is released, and flashes
+  `showAlert`/`showOk` icons. It can describe any plugin instance (for
+  `getSettings`) and re-send `willAppear` for a plugin that connects.
+- The core actions' icons, and the alert and check-mark flashes, are our
+  own SVGs in `crates/superdeck-core/icons/`.
 
 ### `crates/superdeck-plugin-host`
 

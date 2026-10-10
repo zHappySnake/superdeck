@@ -273,6 +273,9 @@ impl Runner<'_> {
         let loaded = match image {
             FaceImage::Builtin(icon) => self.renderer.load_image(icon.svg()).map_err(Into::into),
             FaceImage::DataUrl(url) => self.renderer.load_data_url(url).map_err(Into::into),
+            FaceImage::File(file) => std::fs::read(file)
+                .with_context(|| format!("could not read {}", file.display()))
+                .and_then(|data| Ok(self.renderer.load_image(&data)?)),
             FaceImage::Profile(path) => {
                 let file = self.config.image_file(self.deck.profile().id, path);
                 std::fs::read(&file)
@@ -323,6 +326,8 @@ fn print_plugin_event(event: &PluginEvent) {
         PluginEventKind::KeyUp => "keyUp",
         PluginEventKind::WillAppear => "willAppear",
         PluginEventKind::WillDisappear => "willDisappear",
+        PluginEventKind::DidReceiveSettings => "didReceiveSettings",
+        PluginEventKind::DidReceiveResources => "didReceiveResources",
     };
     let at = event
         .position

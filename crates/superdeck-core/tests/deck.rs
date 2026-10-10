@@ -2,10 +2,15 @@
 
 //! Runs profiles on a [`Deck`] with made-up key presses and times.
 
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde_json::{Map, json};
-use superdeck_core::deck::{FaceImage, Icon, PluginEvent, PluginEventKind};
+use superdeck_core::deck::{
+    ActionDefaults, FLASH, FaceImage, Icon, PluginEvent, PluginEventKind, StateDefaults,
+};
 use superdeck_core::model::{BrightnessMode, FontSize, Resources, TitleAlignment};
 use superdeck_core::{
     Action, ActionInstance, Appearance, CoreAction, Deck, DeckSettings, Effect, InstanceId, Layout,
@@ -506,7 +511,177 @@ fn icons_are_svg() {
         Icon::MultiActionSwitch,
         Icon::Brightness,
         Icon::Sleep,
+        Icon::Alert,
+        Icon::Ok,
     ] {
         assert!(icon.svg().starts_with(b"<svg"), "{icon:?}");
     }
+}
+
+/// Manifest defaults for `com.example.toggle` (two states) and
+/// `com.example.manual` (two states, switched by the plugin).
+fn catalog() -> Arc<HashMap<(String, String), ActionDefaults>> {
+    let two_states = |automatic_states| ActionDefaults {
+        states: vec![
+            StateDefaults {
+                image: Some(FaceImage::File(PathBuf::from("/plugin/off.svg"))),
+                title: Some("Off".to_owned()),
+                title_alignment: Some(TitleAlignment::Middle),
+                ..StateDefaults::default()
+            },
+            StateDefaults {
+                image: Some(FaceImage::File(PathBuf::from("/plugin/on.svg"))),
+                title: Some("On".to_owned()),
+                ..StateDefaults::default()
+            },
+        ],
+        automatic_states,
+    };
+    Arc::new(HashMap::from([
+        (
+            ("com.example".to_owned(), "com.example.toggle".to_owned()),
+            two_states(true),
+        ),
+        (
+            ("com.example".to_owned(), "com.example.manual".to_owned()),
+            two_states(false),
+        ),
+    ]))
+}
+
+fn with_catalog(profile: Profile) -> (Deck, Instant) {
+    let t0 = Instant::now();
+    let mut deck = Deck::new(profile, settings(), 0, t0).with_catalog(catalog());
+    deck.start();
+    (deck, t0)
+}
+
+#[test]
+fn manifest_defaults_show_until_the_plugin_or_user_changes_them() {
+    let toggle = plugin("toggle");
+    let id = toggle.id;
+    let (mut deck, _) = with_catalog(profile(vec![vec![(P00, toggle)]]));
+    let face = deck.face(P00).unwrap();
+    assert_eq!(face.title, "Off");
+    assert_eq!(face.title_alignment, TitleAlignment::Middle);
+    assert_eq!(
+        face.image,
+        Some(FaceImage::File(PathBuf::from("/plugin/off.svg")))
+    );
+
+    deck.set_title(id, Some(0), Some("12"));
+    let face = deck.face(P00).unwrap();
+    assert_eq!(face.title, "12");
+    // The plugin's title doesn't change the manifest's style or image.
+    assert_eq!(face.title_alignment, TitleAlignment::Middle);
+    assert!(matches!(face.image, Some(FaceImage::File(_))));
+
+    deck.set_image(id, None, Some("data:image/png;base64,AA"));
+    assert!(matches!(
+        deck.face(P00).unwrap().image,
+        Some(FaceImage::DataUrl(_))
+    ));
+    // Resetting gives the manifest's image back.
+    deck.set_image(id, None, None);
+    assert!(matches!(
+        deck.face(P00).unwrap().image,
+        Some(FaceImage::File(_))
+    ));
+}
+
+#[test]
+fn two_state_actions_switch_on_release() {
+    let (toggle, manual) = (plugin("toggle"), plugin("manual"));
+    let (mut deck, t) = with_catalog(profile(vec![vec![(P00, toggle), (P10, manual)]]));
+
+    let down = deck.key_down(P00, t);
+    let Effect::Plugin(event) = &down[0] else {
+        panic!("{down:?}");
+    };
+    assert_eq!((event.state, event.states), (0, 2));
+    let up = deck.key_up(P00, t);
+    // keyUp has the state the key was pressed in; then it switches.
+    let Effect::Plugin(event) = &up[0] else {
+        panic!("{up:?}");
+    };
+    assert_eq!(event.state, 0);
+    assert!(up.contains(&Effect::ProfileChanged));
+    assert_eq!(deck.face(P00).unwrap().title, "On");
+
+    // DisableAutomaticStates: the plugin decides.
+    deck.key_down(P10, t);
+    let up = deck.key_up(P10, t);
+    assert_eq!(up.len(), 1);
+    assert_eq!(deck.face(P10).unwrap().title, "Off");
+
+    // Single-state actions, and those without a manifest, never switch.
+    let (mut deck, t) = with_catalog(profile(vec![vec![(P00, plugin("a"))]]));
+    deck.key_down(P00, t);
+    assert_eq!(deck.key_up(P00, t).len(), 1);
+}
+
+#[test]
+fn alerts_flash_for_a_moment() {
+    let a = plugin("a");
+    let id = a.id;
+    let (mut deck, t) = with_catalog(profile(vec![vec![(P00, a)]]));
+    let effects = deck.show_alert(id, t);
+    assert_eq!(draws(&effects), 1);
+    assert_eq!(icon(&deck, P00), Some(Icon::Alert));
+    assert!(!deck.face(P00).unwrap().show_title);
+    assert_eq!(deck.next_deadline(), Some(t + FLASH));
+    assert!(deck.poll(t + FLASH / 2).is_empty());
+    assert_eq!(draws(&deck.poll(t + FLASH)), 1);
+    assert_eq!(icon(&deck, P00), None);
+    assert_eq!(deck.next_deadline(), None);
+
+    deck.show_ok(id, t);
+    assert_eq!(icon(&deck, P00), Some(Icon::Ok));
+}
+
+#[test]
+fn announcing_a_plugin_resends_its_keys() {
+    let mut other = plugin("b");
+    if let Action::Plugin(action) = &mut other.action {
+        action.plugin = "com.other".to_owned();
+    }
+    let (deck, _) = with_catalog(profile(vec![vec![(P00, plugin("a")), (P10, other)]]));
+    assert_eq!(
+        plugin_events(&deck.announce("com.example")),
+        [(PluginEventKind::WillAppear, "a".to_owned(), Some(P00))]
+    );
+    assert!(deck.announce("com.missing").is_empty());
+}
+
+#[test]
+fn describing_instances_anywhere() {
+    let a = plugin("a");
+    let in_folder = plugin("f");
+    let step = plugin("s");
+    let (a_id, folder_id, step_id) = (a.id, in_folder.id, step.id);
+    let folder = core(CoreAction::Folder {
+        keys: [(P20, in_folder)].into(),
+    });
+    let multi = core(CoreAction::MultiAction { steps: vec![step] });
+    let (mut deck, _) = with_catalog(profile(vec![
+        vec![(P00, a)],
+        vec![(P10, folder), (P30, multi)],
+    ]));
+    let kind = PluginEventKind::DidReceiveSettings;
+    assert_eq!(deck.describe(kind, a_id).unwrap().position, Some(P00));
+    // On another page, in a closed folder.
+    assert_eq!(deck.describe(kind, folder_id).unwrap().position, Some(P20));
+    assert_eq!(deck.describe(kind, step_id).unwrap().position, None);
+    assert!(deck.describe(kind, InstanceId::new()).is_none());
+
+    assert!(deck.owns("com.example", step_id));
+    assert!(!deck.owns("com.other", step_id));
+
+    let resources = Resources::from([("sound".to_owned(), "/a.wav".to_owned())]);
+    assert_eq!(
+        deck.set_resources(a_id, resources.clone()),
+        [Effect::ProfileChanged]
+    );
+    assert!(deck.set_resources(a_id, resources.clone()).is_empty());
+    assert_eq!(deck.describe(kind, a_id).unwrap().resources, resources);
 }
