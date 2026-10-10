@@ -84,6 +84,7 @@ pub(crate) async fn supervise(
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true);
+        exit_with_host(&mut command);
         let started = Instant::now();
         let outcome = match command.spawn() {
             Ok(mut child) => {
@@ -137,6 +138,22 @@ pub(crate) async fn supervise(
             () = stopping(&mut shutdown) => return,
         }
         delay = (delay * 2).min(MAX_DELAY);
+    }
+}
+
+/// Has the kernel send the plugin `SIGTERM` if the thread that starts it
+/// ends, so plugins don't outlive a host that crashed. Plugins are started
+/// from the runtime's worker threads, which last as long as the host.
+#[allow(unsafe_code)]
+fn exit_with_host(command: &mut Command) {
+    // SAFETY: the closure runs in the child between fork and exec, where
+    // only async-signal-safe calls are allowed; it makes one prctl system
+    // call and touches no memory shared with the parent.
+    unsafe {
+        command.pre_exec(|| {
+            rustix::process::set_parent_process_death_signal(Some(rustix::process::Signal::TERM))
+                .map_err(std::io::Error::from)
+        });
     }
 }
 

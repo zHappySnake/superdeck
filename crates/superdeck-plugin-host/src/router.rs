@@ -248,6 +248,9 @@ struct Slot {
     conn: Option<ConnId>,
     /// Contexts it has been told about, so it may address them.
     contexts: HashSet<String>,
+    /// Contexts showing, as this connection has been told: `willAppear`
+    /// and `willDisappear` alternate for each.
+    showing: HashSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -300,6 +303,7 @@ impl Router {
                     token: None,
                     conn: None,
                     contexts: HashSet::new(),
+                    showing: HashSet::new(),
                 };
                 (plugin.uuid.clone(), slot)
             })
@@ -426,6 +430,7 @@ impl Router {
                     && slot.conn.is_none()
                 {
                     slot.conn = Some(conn);
+                    slot.showing.clear();
                     slot.log.write(Source::Host, "registered");
                     self.peers.insert(conn, Peer::Plugin(uuid.clone()));
                     for device in &self.devices {
@@ -831,6 +836,19 @@ impl Router {
             && !slot.contexts.contains(context)
         {
             slot.contexts.insert(context.to_owned());
+        }
+        if slot.conn.is_none() {
+            return Vec::new();
+        }
+        // The app may announce a key both as the plugin registers and
+        // when it starts; the plugin hears of it once.
+        let repeated = match event {
+            Event::WillAppear(event) => !slot.showing.insert(event.context.clone()),
+            Event::WillDisappear(event) => !slot.showing.remove(&event.context),
+            _ => false,
+        };
+        if repeated {
+            return Vec::new();
         }
         match slot.conn {
             Some(conn) => vec![Output::Send(conn, to_json(event))],
@@ -1241,6 +1259,27 @@ mod tests {
             .received(1, r#"{"event":"registerPlugin","uuid":"x"}"#);
         assert_eq!(out[0], Output::Close(1));
         assert!(!f.router.is_connected(PLUGIN));
+    }
+
+    #[test]
+    fn appear_and_disappear_alternate() {
+        let mut f = fixture();
+        connect(&mut f.router, PLUGIN, 1);
+        let disappear = |context: &str| {
+            let Event::WillAppear(event) = will_appear(context) else {
+                unreachable!()
+            };
+            Event::WillDisappear(event)
+        };
+        assert_eq!(f.router.send(PLUGIN, &will_appear("c")).len(), 1);
+        assert!(f.router.send(PLUGIN, &will_appear("c")).is_empty());
+        assert_eq!(f.router.send(PLUGIN, &disappear("c")).len(), 1);
+        assert!(f.router.send(PLUGIN, &disappear("c")).is_empty());
+        assert!(f.router.send(PLUGIN, &disappear("never")).is_empty());
+        // A new connection starts afresh.
+        f.router.send(PLUGIN, &will_appear("c"));
+        connect(&mut f.router, PLUGIN, 2);
+        assert_eq!(f.router.send(PLUGIN, &will_appear("c")).len(), 1);
     }
 
     #[test]

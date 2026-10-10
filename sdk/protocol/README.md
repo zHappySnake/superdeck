@@ -126,7 +126,8 @@ reason they're not running.
 When a plugin exits, for any reason, SuperDeck starts it again after a
 delay: one second, then twice as long after each exit, up to a minute. The
 delay goes back to one second once the plugin has been running for a
-minute. Plugins are stopped when SuperDeck quits.
+minute. Plugins are stopped when SuperDeck quits, and the system stops
+them if SuperDeck crashes.
 
 ### Logs
 
