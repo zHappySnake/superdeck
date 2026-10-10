@@ -21,6 +21,7 @@
 //! # }
 //! ```
 
+pub mod deck;
 pub mod devices;
 mod error;
 mod format;
@@ -29,6 +30,7 @@ pub mod model;
 mod store;
 pub mod validate;
 
+pub use deck::{Deck, DeckSettings, Effect, KeyFace};
 pub use devices::{DeviceSettings, Devices};
 pub use error::Error;
 pub use format::{DEVICES_VERSION, PROFILE_VERSION};

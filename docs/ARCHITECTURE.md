@@ -101,6 +101,20 @@ undo/redo, smart profile switching, and dispatching input events
 to the core or to plugins. It exposes an async API that both the Tauri app and
 a headless mode can drive.
 
+- `ConfigDir` reads and writes the configuration directory, checking every
+  rule of the format.
+- `Deck` runs one profile on one device. It does no I/O and reads no clock:
+  callers pass in key presses and the time, and carry out the `Effect`s it
+  returns (draw a key, set the brightness, sleep or wake, send a plugin
+  event, switch profile, save). It tracks the page and open folders,
+  resolves what each key shows (the user's appearance over the plugin's
+  run-time title and image over SuperDeck's icon), and runs the core
+  actions, including timed Multi Action steps through `poll` and
+  `next_deadline`. A key's release always goes to the action it pressed,
+  even after a page change, and the press that wakes a sleeping device does
+  nothing else.
+- The core actions' icons are our own SVGs in `crates/superdeck-core/icons/`.
+
 ### `crates/superdeck-plugin-host`
 
 Implements the Stream Deck SDK host side:

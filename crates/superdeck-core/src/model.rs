@@ -66,6 +66,20 @@ impl Profile {
             Some(instance)
         })
     }
+
+    /// The action instance with this ID, wherever it is.
+    #[must_use]
+    pub fn instance(&self, id: InstanceId) -> Option<&ActionInstance> {
+        self.instances().find(|instance| instance.id == id)
+    }
+
+    /// The action instance with this ID, wherever it is, to change it.
+    pub fn instance_mut(&mut self, id: InstanceId) -> Option<&mut ActionInstance> {
+        self.pages
+            .iter_mut()
+            .flat_map(|page| page.keys.values_mut())
+            .find_map(|instance| instance.find_mut(id))
+    }
 }
 
 /// A key grid.
@@ -224,6 +238,26 @@ impl ActionInstance {
         match &self.action {
             Action::Core(core) => Some(core),
             Action::Plugin(_) => None,
+        }
+    }
+
+    /// This instance or one inside it with the given ID.
+    fn find_mut(&mut self, id: InstanceId) -> Option<&mut ActionInstance> {
+        if self.id == id {
+            return Some(self);
+        }
+        match &mut self.action {
+            Action::Core(CoreAction::Folder { keys }) => {
+                keys.values_mut().find_map(|child| child.find_mut(id))
+            }
+            Action::Core(CoreAction::MultiAction { steps }) => {
+                steps.iter_mut().find_map(|child| child.find_mut(id))
+            }
+            Action::Core(CoreAction::MultiActionSwitch { steps }) => steps
+                .iter_mut()
+                .flatten()
+                .find_map(|child| child.find_mut(id)),
+            _ => None,
         }
     }
 
@@ -1004,5 +1038,13 @@ mod tests {
             names,
             ["folder", "sleep", "multi-action", "sleep", "sleep", "sleep"]
         );
+
+        let ids: Vec<_> = profile.instances().map(|i| i.id).collect();
+        for id in ids {
+            assert_eq!(profile.instance(id).unwrap().id, id);
+            profile.instance_mut(id).unwrap().state = 1;
+        }
+        assert!(profile.instances().all(|i| i.state == 1));
+        assert!(profile.instance(InstanceId::new()).is_none());
     }
 }
