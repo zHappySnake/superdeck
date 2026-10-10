@@ -128,7 +128,7 @@ These need design work early because the official app doesn't face them.
 
 ## Milestones
 
-### M0: Scaffold (this commit)
+### M0: Scaffold
 
 License, README, contributing guide, scope, architecture, repository layout,
 dev tooling, CI.
