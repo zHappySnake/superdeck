@@ -1,0 +1,40 @@
+{
+  "name": "@superdeck/sdk",
+  "version": "0.0.0",
+  "description": "Write Stream Deck plugins for SuperDeck, compatible with the official app",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhappysnake/superdeck.git",
+    "directory": "sdk/js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "LICENSE-*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/**/*.test.ts'",
+    "prepare": "tsc -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "ajv": "^8.17.1",
+    "typescript": "^6.0.3"
+  }
+}
