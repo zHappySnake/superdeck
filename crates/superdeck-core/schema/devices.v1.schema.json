@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/schema/devices.v1.schema.json",
+  "title": "SuperDeck devices, format version 1",
+  "description": "devices.json in the configuration directory. See docs/profile-format.md. That a profile belongs to one device and that defaultProfile is one of the device's profiles are checked by superdeck-core.",
+  "type": "object",
+  "required": ["formatVersion"],
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "devices": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["profiles"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "profiles": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          },
+          "defaultProfile": { "$ref": "#/$defs/id" },
+          "brightness": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "sleepAfterMinutes": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "formatVersion": 1,
+  "id": "7f9c2e1a-3b4d-4e5f-8a6b-7c8d9e0f1a2b",
+  "name": "Streaming",
+  "layout": {
+    "columns": 5,
+    "rows": 3
+  },
+  "applications": [
+    "com.obsproject.Studio"
+  ],
+  "source": {
+    "plugin": "com.example.streaming",
+    "profile": "Streaming Layout"
+  },
+  "pages": [
+    {
+      "id": "0b1c2d3e-4f50-4617-a8b9-cadbecfd0e1f",
+      "keys": {
+        "0,0": {
+          "id": "5c0a7e4e-9a42-4e0f-b3c5-0d6c8e2f1b7a",
+          "action": "com.example.streaming.mute",
+          "plugin": "com.example.streaming",
+          "settings": {
+            "source": "Mic/Aux",
+            "fade": {
+              "milliseconds": 300,
+              "curve": "linear"
+            }
+          },
+          "state": 1,
+          "appearance": [
+            {
+              "title": "Live",
+              "image": "images/3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b.png"
+            },
+            {
+              "title": "Muted",
+              "showTitle": true,
+              "titleAlignment": "bottom",
+              "fontFamily": "Noto Sans",
+              "fontSize": 14.5,
+              "fontStyle": "boldItalic",
+              "fontUnderline": true,
+              "titleColor": "#ff4040",
+              "image": "images/9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08.svg"
+            }
+          ]
+        },
+        "1,0": {
+          "id": "6d1b8f5f-0b53-4f1a-84d6-1e7d9f3a2c8b",
+          "action": "io.github.zhappysnake.superdeck.folder",
+          "plugin": "io.github.zhappysnake.superdeck",
+          "settings": {
+            "keys": {
+              "1,0": {
+                "id": "7e2c9a60-1c64-4a2b-95e7-2f8e0a4b3d9c",
+                "action": "io.github.zhappysnake.superdeck.folder",
+                "plugin": "io.github.zhappysnake.superdeck",
+                "appearance": [
+                  {
+                    "title": "Empty"
+                  }
+                ]
+              },
+              "4,2": {
+                "id": "8f3d0b71-2d75-4b3c-a6f8-3a9f1b5c4e0d",
+                "action": "io.github.zhappysnake.superdeck.brightness",
+                "plugin": "io.github.zhappysnake.superdeck",
+                "settings": {
+                  "mode": "increase",
+                  "value": 10
+                }
+              }
+            }
+          },
+          "appearance": [
+            {
+              "title": "Scenes"
+            }
+          ]
+        },
+        "4,0": {
+          "id": "904e1c82-3e86-4c4d-b709-4b0a2c6d5f1e",
+          "action": "io.github.zhappysnake.superdeck.multi-action",
+          "plugin": "io.github.zhappysnake.superdeck",
+          "settings": {
+            "steps": [
+              {
+                "id": "a15f2d93-4f97-4d5e-881a-5c1b3d7e6a2f",
+                "action": "com.example.streaming.scene",
+                "plugin": "com.example.streaming",
+                "settings": {
+                  "scene": "Intro"
+                }
+              },
+              {
+                "id": "b2603ea4-50a8-4e6f-992b-6d2c4e8f7b30",
+                "action": "io.github.zhappysnake.superdeck.delay",
+                "plugin": "io.github.zhappysnake.superdeck",
+                "settings": {
+                  "milliseconds": 1500
+                }
+              },
+              {
+                "id": "c3714fb5-61b9-4f70-aa3c-7e3d5f908c41",
+                "action": "io.github.zhappysnake.superdeck.switch-profile",
+                "plugin": "io.github.zhappysnake.superdeck",
+                "settings": {
+                  "profile": "c3d4e5f6-0718-4293-a4b5-c6d7e8f90a1b",
+                  "page": 1
+                }
+              }
+            ]
+          }
+        },
+        "0,2": {
+          "id": "d48250c6-72ca-4081-bb4d-8f4e60a19d52",
+          "action": "io.github.zhappysnake.superdeck.previous-page",
+          "plugin": "io.github.zhappysnake.superdeck"
+        },
+        "2,2": {
+          "id": "e59361d7-83db-4192-8c5e-905f71b2ae63",
+          "action": "io.github.zhappysnake.superdeck.page-indicator",
+          "plugin": "io.github.zhappysnake.superdeck"
+        },
+        "4,2": {
+          "id": "f6a472e8-94ec-42a3-9d6f-a16082c3bf74",
+          "action": "io.github.zhappysnake.superdeck.next-page",
+          "plugin": "io.github.zhappysnake.superdeck"
+        }
+      }
+    },
+    {
+      "id": "1c2d3e4f-5061-4728-b9ca-dbecfd0e1f20",
+      "keys": {
+        "0,0": {
+          "id": "07b583f9-a5fd-43b4-ae70-b2719d4dc085",
+          "action": "io.github.zhappysnake.superdeck.go-to-page",
+          "plugin": "io.github.zhappysnake.superdeck",
+          "settings": {
+            "page": 0
+          }
+        },
+        "1,0": {
+          "id": "18c6940a-b60e-44c5-8f81-c382ae5ed196",
+          "action": "io.github.zhappysnake.superdeck.multi-action-switch",
+          "plugin": "io.github.zhappysnake.superdeck",
+          "settings": {
+            "steps": [
+              [
+                {
+                  "id": "29d7a51b-c71f-45d6-9092-d493bf6fe2a7",
+                  "action": "com.example.streaming.record",
+                  "plugin": "com.example.streaming"
+                }
+              ],
+              []
+            ]
+          },
+          "state": 1
+        },
+        "2,1": {
+          "id": "3ae8b62c-d820-46e7-a1a3-e5a4c07af3b8",
+          "action": "io.github.zhappysnake.superdeck.sleep",
+          "plugin": "io.github.zhappysnake.superdeck"
+        }
+      }
+    },
+    {
+      "id": "2d3e4f50-6172-4839-8adb-ecfd0e1f2031"
+    }
+  ]
+}

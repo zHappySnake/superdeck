@@ -5,9 +5,9 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha.** The device layer (milestone M1) and key rendering
-> are in place, with a command-line tool for testing devices; there's no app
-> yet. See the [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer (milestone M1), key rendering, and
+> the profile format are in place, with a command-line tool for testing
+> devices; there's no app yet. See the [roadmap](docs/ROADMAP.md) for what comes next.
 
 ## Goals
 

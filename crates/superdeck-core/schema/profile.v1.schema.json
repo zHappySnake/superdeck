@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/schema/profile.v1.schema.json",
+  "title": "SuperDeck profile, format version 1",
+  "description": "profile.json in a profile directory. See docs/profile-format.md. Rules the schema can't express (key positions inside the layout, unique IDs, Multi Action step restrictions) are checked by superdeck-core.",
+  "type": "object",
+  "required": ["formatVersion", "id", "name", "layout", "pages"],
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string" },
+    "layout": {
+      "type": "object",
+      "required": ["columns", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "columns": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 16 }
+      }
+    },
+    "applications": { "type": "array", "items": { "type": "string" } },
+    "source": {
+      "type": "object",
+      "required": ["plugin", "profile"],
+      "additionalProperties": false,
+      "properties": {
+        "plugin": { "type": "string" },
+        "profile": { "type": "string" }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "keys": { "$ref": "#/$defs/keys" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "index": { "type": "integer", "minimum": 0 },
+    "keys": {
+      "type": "object",
+      "propertyNames": { "pattern": "^(0|[1-9][0-9]*),(0|[1-9][0-9]*)$" },
+      "additionalProperties": { "$ref": "#/$defs/instance" }
+    },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/instance" } },
+    "noSettings": { "type": "object", "maxProperties": 0 },
+    "instance": {
+      "type": "object",
+      "required": ["id", "action", "plugin"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "action": { "type": "string", "minLength": 1 },
+        "plugin": { "type": "string", "minLength": 1 },
+        "settings": { "type": "object" },
+        "state": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "appearance": {
+          "type": "array",
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/appearance" }
+        }
+      },
+      "if": {
+        "properties": { "plugin": { "const": "io.github.zhappysnake.superdeck" } }
+      },
+      "then": { "$ref": "#/$defs/coreAction" }
+    },
+    "coreAction": {
+      "properties": {
+        "action": {
+          "enum": [
+            "io.github.zhappysnake.superdeck.folder",
+            "io.github.zhappysnake.superdeck.switch-profile",
+            "io.github.zhappysnake.superdeck.next-page",
+            "io.github.zhappysnake.superdeck.previous-page",
+            "io.github.zhappysnake.superdeck.go-to-page",
+            "io.github.zhappysnake.superdeck.page-indicator",
+            "io.github.zhappysnake.superdeck.multi-action",
+            "io.github.zhappysnake.superdeck.multi-action-switch",
+            "io.github.zhappysnake.superdeck.delay",
+            "io.github.zhappysnake.superdeck.brightness",
+            "io.github.zhappysnake.superdeck.sleep"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "action": { "const": "io.github.zhappysnake.superdeck.folder" } }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "additionalProperties": false,
+                "properties": { "keys": { "$ref": "#/$defs/keys" } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "io.github.zhappysnake.superdeck.switch-profile" }
+            }
+          },
+          "then": {
+            "required": ["settings"],
+            "properties": {
+              "settings": {
+                "required": ["profile"],
+                "additionalProperties": false,
+                "properties": {
+                  "profile": { "$ref": "#/$defs/id" },
+                  "page": { "$ref": "#/$defs/index" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "action": { "const": "io.github.zhappysnake.superdeck.go-to-page" } }
+          },
+          "then": {
+            "required": ["settings"],
+            "properties": {
+              "settings": {
+                "required": ["page"],
+                "additionalProperties": false,
+                "properties": { "page": { "$ref": "#/$defs/index" } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "action": { "const": "io.github.zhappysnake.superdeck.multi-action" } }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "additionalProperties": false,
+                "properties": { "steps": { "$ref": "#/$defs/steps" } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "io.github.zhappysnake.superdeck.multi-action-switch" }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "additionalProperties": false,
+                "properties": {
+                  "steps": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": { "$ref": "#/$defs/steps" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "action": { "const": "io.github.zhappysnake.superdeck.delay" } }
+          },
+          "then": {
+            "required": ["settings"],
+            "properties": {
+              "settings": {
+                "required": ["milliseconds"],
+                "additionalProperties": false,
+                "properties": {
+                  "milliseconds": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "action": { "const": "io.github.zhappysnake.superdeck.brightness" } }
+          },
+          "then": {
+            "required": ["settings"],
+            "properties": {
+              "settings": {
+                "required": ["mode", "value"],
+                "additionalProperties": false,
+                "properties": {
+                  "mode": { "enum": ["set", "increase", "decrease"] },
+                  "value": { "type": "integer", "minimum": 0, "maximum": 100 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "enum": [
+                  "io.github.zhappysnake.superdeck.next-page",
+                  "io.github.zhappysnake.superdeck.previous-page",
+                  "io.github.zhappysnake.superdeck.page-indicator",
+                  "io.github.zhappysnake.superdeck.sleep"
+                ]
+              }
+            }
+          },
+          "then": { "properties": { "settings": { "$ref": "#/$defs/noSettings" } } }
+        }
+      ]
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "showTitle": { "type": "boolean" },
+        "titleAlignment": { "enum": ["top", "middle", "bottom"] },
+        "fontFamily": { "type": "string" },
+        "fontSize": { "type": "number", "minimum": 1, "maximum": 144 },
+        "fontStyle": { "enum": ["regular", "bold", "italic", "boldItalic"] },
+        "fontUnderline": { "type": "boolean" },
+        "titleColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "image": {
+          "type": "string",
+          "pattern": "^images/[0-9a-f]{64}\\.(png|jpg|gif|svg)$"
+        }
+      }
+    }
+  }
+}

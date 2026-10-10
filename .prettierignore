@@ -7,3 +7,6 @@ build/
 .svelte-kit/
 *.sdPlugin/bin/
 app/src-tauri/gen/
+
+# Written by superdeck-core; tests compare them byte for byte.
+crates/superdeck-core/tests/data/

@@ -1,9 +1,8 @@
 # Profile format
 
 > [!NOTE]
-> **Status: agreed, not implemented yet.** `superdeck-core` (milestone M2)
-> will implement it, together with a JSON Schema and the migration code.
-> Until the first release, version 1 can still change without a migration.
+> **Status: version 1, implemented in `superdeck-core`.** Until the first
+> release, version 1 can still change without a migration.
 
 This is how SuperDeck stores profiles, pages, folders, and the actions on
 keys. It's our own format: the official `.streamDeckProfile` files are only
@@ -61,7 +60,8 @@ logs and caches in `$XDG_STATE_HOME` and `$XDG_CACHE_HOME` (see
 - **Unknown fields.** A reader rejects fields it doesn't know, except inside
   plugin `settings`. New fields come with a new format version, so an
   unknown field means a damaged file or a newer version.
-- **Colors** are `"#rrggbb"`, lowercase.
+- **Colors** are `"#rrggbb"`, written in lowercase; uppercase is accepted
+  when reading.
 
 ## `profile.json`
 
@@ -225,7 +225,8 @@ stored once, and an image file never changes once written.
 `image` holds the path relative to the profile directory
 (`"images/<hash>.<ext>"`); any other path is an error, so a profile can't
 point outside its directory. Image files no key refers to are deleted when
-the profile is saved.
+the profile is saved. If an image file is missing, the key shows without it;
+the profile still loads.
 
 ## Core actions
 
@@ -351,8 +352,8 @@ for every incompatible change. A file is read like this:
    is first written back, the original is kept as `profile.json.v1.bak` (with
    its old version number). Migrations are tested against sample files of
    every old version, kept in the repository.
-3. **Newer:** don't touch it. The profile is shown read-only with a message
-   that a newer SuperDeck made it, so downgrading never destroys data.
+3. **Newer:** don't load it, and never write over it; SuperDeck says that a
+   newer version made it. Downgrading never destroys data.
 
 The format version is separate from the app version; most releases won't
 change it.
@@ -372,14 +373,18 @@ change it.
 
 ## Validation
 
-`superdeck-core` ships a JSON Schema for each file (`profile.json` and
-`devices.json`), version by version. The schema covers structure, value
-ranges, and core action settings; the rules it can't express are checked in
-code:
+`superdeck-core` ships a JSON Schema for each file and version, in
+[`crates/superdeck-core/schema/`](../crates/superdeck-core/schema/)
+(`profile.v1.schema.json`, `devices.v1.schema.json`), with sample files in
+[`crates/superdeck-core/tests/data/`](../crates/superdeck-core/tests/data/).
+Tests check that the samples and everything SuperDeck writes match the
+schemas. The schema covers structure, value ranges, and core action
+settings; the rules it can't express are checked in code:
 
 - key positions are inside the layout, and `"0,0"` is empty in folders
 - IDs are unique within a profile (pages and action instances, including
   nested ones)
-- `image` paths point into `images/` and the files exist
-- `defaultProfile` is one of the device's `profiles`
+- a profile's `id` matches its directory name
+- `defaultProfile` is one of the device's `profiles`, and no profile belongs
+  to two devices
 - Multi Action steps are allowed actions
