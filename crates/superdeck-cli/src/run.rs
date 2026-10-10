@@ -4,15 +4,16 @@
 //!
 //! Glues the pieces together: key presses from `superdeck-device` go to a
 //! `superdeck-core` [`Deck`], and its effects are carried out here, with keys
-//! drawn by `superdeck-render`. There's no plugin host yet, so plugin events
-//! are printed.
+//! drawn by `superdeck-render`. Plugins run in `superdeck-plugin-host`;
+//! see the `plugins` module.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, bail};
-use superdeck_core::deck::{FaceImage, PluginEvent, PluginEventKind};
+use superdeck_core::deck::{Catalog, FaceImage, PluginEvent, PluginEventKind};
 use superdeck_core::model::FontStyle;
 use superdeck_core::{
     ConfigDir, Deck, DeckSettings, DeviceSettings, Effect, KeyFace, Layout, Position, Profile,
@@ -22,12 +23,20 @@ use superdeck_device::image::{DynamicImage, Rgb, RgbImage};
 use superdeck_device::{Device, DeviceInfo, KeyEvent, Spec, encode_key_image};
 use superdeck_render::{KeyImage, Rendered, Renderer, TitleAlignment, TitleStyle};
 
+use crate::plugins::{self, PluginArgs, Plugins};
+
+/// How often plugin requests are looked at while waiting for keys.
+const PLUGIN_POLL: Duration = Duration::from_millis(10);
+
 /// Options of the `run` command.
 #[derive(clap::Args)]
 pub struct RunArgs {
     /// Configuration directory. Defaults to `$XDG_CONFIG_HOME/superdeck`.
     #[arg(long, value_name = "DIR")]
     config: Option<PathBuf>,
+
+    #[command(flatten)]
+    plugins: PluginArgs,
 }
 
 /// An animated key: its encoded frames, and which one shows until when.
@@ -49,6 +58,8 @@ struct Runner<'a> {
     animations: HashMap<u8, Animation>,
     sleeping: bool,
     deck: Deck,
+    catalog: Arc<Catalog>,
+    plugins: Option<Plugins>,
 }
 
 pub fn run(info: &DeviceInfo, device: &mut Device, args: &RunArgs) -> Result<()> {
@@ -83,6 +94,11 @@ pub fn run(info: &DeviceInfo, device: &mut Device, args: &RunArgs) -> Result<()>
         .start_profile()
         .context("this device has no profiles in devices.json")?;
     let profile = load_profile(&config, start, layout)?;
+    let (plugins, catalog) = plugins::start(
+        &args.plugins,
+        &config,
+        plugins::device(info.model, &serial, spec.columns, spec.rows),
+    )?;
     eprintln!(
         "Running profile {:?} on the {} ({}); Ctrl+C to stop.",
         profile.name, info.model, serial
@@ -103,11 +119,18 @@ pub fn run(info: &DeviceInfo, device: &mut Device, args: &RunArgs) -> Result<()>
         images: HashMap::new(),
         animations: HashMap::new(),
         sleeping: false,
-        deck: Deck::new(profile, deck_settings, 0, Instant::now()),
+        deck: Deck::new(profile, deck_settings, 0, Instant::now())
+            .with_catalog(Arc::clone(&catalog)),
+        catalog,
+        plugins,
     };
     let effects = runner.deck.start();
-    runner.apply(effects)?;
-    runner.run()
+    let result = runner.apply(effects).and_then(|()| runner.run());
+    // The device went away: stop the plugins before giving up.
+    if let Some(plugins) = runner.plugins.take() {
+        plugins.shutdown();
+    }
+    result
 }
 
 fn load_profile(config: &ConfigDir, id: ProfileId, layout: Layout) -> Result<Profile> {
@@ -134,13 +157,23 @@ impl Runner<'_> {
                 .into_iter()
                 .flatten()
                 .min();
-            let timeout = deadline.map(|deadline| deadline.saturating_duration_since(now));
+            let mut timeout = deadline.map(|deadline| deadline.saturating_duration_since(now));
+            if self.plugins.is_some() {
+                timeout = Some(timeout.map_or(PLUGIN_POLL, |t| t.min(PLUGIN_POLL)));
+            }
             let events = self.device.read_key_events(timeout)?;
             let now = Instant::now();
             for event in events {
                 let effects = match event {
                     KeyEvent::Down(key) => self.deck.key_down(self.position(key), now),
                     KeyEvent::Up(key) => self.deck.key_up(self.position(key), now),
+                };
+                self.apply(effects)?;
+            }
+            while let Some(request) = self.plugins.as_mut().and_then(Plugins::next_request) {
+                let effects = match &self.plugins {
+                    Some(plugins) => plugins.handle(&mut self.deck, request, now),
+                    None => Vec::new(),
                 };
                 self.apply(effects)?;
             }
@@ -177,7 +210,10 @@ impl Runner<'_> {
                     self.device.set_brightness(0)?;
                 }
                 Effect::Wake => self.sleeping = false,
-                Effect::Plugin(event) => print_plugin_event(&event),
+                Effect::Plugin(event) => match &self.plugins {
+                    Some(plugins) => plugins.send(&self.deck, &event),
+                    None => print_plugin_event(&event),
+                },
                 Effect::SwitchProfile { profile, page } => self.switch_profile(profile, page)?,
                 Effect::ProfileChanged => self.config.save_profile(self.deck.profile())?,
             }
@@ -207,7 +243,8 @@ impl Runner<'_> {
                 .and_then(|s| s.sleep_after_minutes)
                 .map(|minutes| Duration::from_secs(u64::from(minutes) * 60)),
         };
-        self.deck = Deck::new(profile, deck_settings, page, Instant::now());
+        self.deck = Deck::new(profile, deck_settings, page, Instant::now())
+            .with_catalog(Arc::clone(&self.catalog));
         let effects = self.deck.start();
         self.apply(effects)
     }

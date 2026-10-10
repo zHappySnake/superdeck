@@ -2,6 +2,7 @@
 
 //! `superdeck-cli`: drive a Stream Deck by hand, to test the device layer.
 
+mod plugins;
 mod run;
 
 use std::fs::File;
@@ -86,8 +87,9 @@ enum Command {
     /// Run the device from its profiles, as the app will, until Ctrl+C.
     ///
     /// Uses `devices.json` and the profiles in the configuration directory;
-    /// a new device gets an empty Default profile. Plugin events are
-    /// printed, since there's no plugin host yet.
+    /// a new device gets an empty Default profile. Runs the installed
+    /// plugins on Node.js; their logs are in
+    /// `$XDG_STATE_HOME/superdeck/logs/plugins/`.
     Run(run::RunArgs),
     /// Turn every key black.
     Clear,

@@ -17,9 +17,12 @@ anyhow.workspace = true
 clap.workspace = true
 image.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 superdeck-core.workspace = true
 superdeck-device.workspace = true
+superdeck-plugin-host.workspace = true
 superdeck-render.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true

@@ -1417,9 +1417,12 @@ dependencies = [
  "clap",
  "image",
  "serde_json",
+ "sha2",
  "superdeck-core",
  "superdeck-device",
+ "superdeck-plugin-host",
  "superdeck-render",
+ "tokio",
 ]
 
 [[package]]
