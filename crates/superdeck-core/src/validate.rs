@@ -186,6 +186,7 @@ mod tests {
             plugin: "com.example".to_owned(),
             action: "com.example.action".to_owned(),
             settings: serde_json::Map::new(),
+            resources: crate::model::Resources::new(),
         }))
     }
 

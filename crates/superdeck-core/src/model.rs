@@ -294,7 +294,12 @@ pub struct PluginAction {
     pub action: String,
     /// Settings the plugin saved, kept as given.
     pub settings: Map<String, Value>,
+    /// Files the instance refers to, by name (`setResources`).
+    pub resources: Resources,
 }
+
+/// Files a plugin action refers to: names mapped to paths.
+pub type Resources = BTreeMap<String, String>;
 
 /// A built-in action. Its settings are part of the profile format.
 #[derive(Debug, Clone, PartialEq)]
@@ -539,6 +544,8 @@ struct StoredInstance {
     #[serde(default)]
     settings: Map<String, Value>,
     #[serde(default)]
+    resources: Resources,
+    #[serde(default)]
     state: u8,
     #[serde(default)]
     appearance: Vec<Appearance>,
@@ -546,21 +553,25 @@ struct StoredInstance {
 
 impl Serialize for ActionInstance {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let (plugin, action, settings) = match &self.action {
+        let empty = Resources::new();
+        let (plugin, action, settings, resources) = match &self.action {
             Action::Plugin(plugin) => (
                 plugin.plugin.clone(),
                 plugin.action.clone(),
                 Value::Object(plugin.settings.clone()),
+                &plugin.resources,
             ),
             Action::Core(core) => (
                 CORE_PLUGIN.to_owned(),
                 core.uuid(),
                 core.settings().map_err(serde::ser::Error::custom)?,
+                &empty,
             ),
         };
         let has_settings = settings.as_object().is_some_and(|s| !s.is_empty());
         let fields = 3
             + usize::from(has_settings)
+            + usize::from(!resources.is_empty())
             + usize::from(self.state != 0)
             + usize::from(!self.appearance.is_empty());
         let mut s = serializer.serialize_struct("ActionInstance", fields)?;
@@ -569,6 +580,9 @@ impl Serialize for ActionInstance {
         s.serialize_field("plugin", &plugin)?;
         if has_settings {
             s.serialize_field("settings", &settings)?;
+        }
+        if !resources.is_empty() {
+            s.serialize_field("resources", resources)?;
         }
         if self.state != 0 {
             s.serialize_field("state", &self.state)?;
@@ -584,6 +598,9 @@ impl<'de> Deserialize<'de> for ActionInstance {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let stored = StoredInstance::deserialize(deserializer)?;
         let action = if stored.plugin == CORE_PLUGIN {
+            if !stored.resources.is_empty() {
+                return Err(de::Error::custom("core actions have no resources"));
+            }
             let name = stored
                 .action
                 .strip_prefix(CORE_PLUGIN)
@@ -599,6 +616,7 @@ impl<'de> Deserialize<'de> for ActionInstance {
                 plugin: stored.plugin,
                 action: stored.action,
                 settings: stored.settings,
+                resources: stored.resources,
             })
         };
         Ok(Self {

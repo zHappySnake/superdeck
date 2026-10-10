@@ -150,6 +150,7 @@ look. The same object describes plugin actions and the
 | `action`     | string                             | required | Action UUID, as in the plugin's `manifest.json`    |
 | `plugin`     | string                             | required | Plugin UUID                                        |
 | `settings`   | object                             | `{}`     | Per-action settings, as the plugin last saved them |
+| `resources`  | object of strings                  | `{}`     | Files the instance refers to, by name              |
 | `state`      | integer                            | `0`      | Current state of a multi-state action (0 or 1)     |
 | `appearance` | array of [Appearance](#appearance) | `[]`     | User customizations, one per state, in state order |
 
@@ -158,6 +159,9 @@ look. The same object describes plugin actions and the
   a placeholder until the plugin is installed.
 - `settings` belong to the plugin (`setSettings`/`didReceiveSettings`) and
   are stored as received, with no checks beyond being a JSON object.
+- `resources` belong to the plugin too (`setResources`, Stream Deck 7.1):
+  names mapped to file paths, which exports will carry along with the
+  instance. Core actions have none.
 - `state` is stored because the official app keeps a toggle's state across
   restarts.
 - `id` doubles as the SDK `context`, so a plugin sees the same context for

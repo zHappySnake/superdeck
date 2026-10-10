@@ -65,6 +65,10 @@
         "action": { "type": "string", "minLength": 1 },
         "plugin": { "type": "string", "minLength": 1 },
         "settings": { "type": "object" },
+        "resources": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
         "state": { "type": "integer", "minimum": 0, "maximum": 1 },
         "appearance": {
           "type": "array",
@@ -75,7 +79,10 @@
       "if": {
         "properties": { "plugin": { "const": "io.github.zhappysnake.superdeck" } }
       },
-      "then": { "$ref": "#/$defs/coreAction" }
+      "then": {
+        "$ref": "#/$defs/coreAction",
+        "not": { "required": ["resources"] }
+      }
     },
     "coreAction": {
       "properties": {

@@ -28,6 +28,9 @@
               "curve": "linear"
             }
           },
+          "resources": {
+            "sound": "/home/user/sounds/mute.wav"
+          },
           "state": 1,
           "appearance": [
             {

@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Map, json};
 use superdeck_core::deck::{FaceImage, Icon, PluginEvent, PluginEventKind};
-use superdeck_core::model::{BrightnessMode, FontSize, TitleAlignment};
+use superdeck_core::model::{BrightnessMode, FontSize, Resources, TitleAlignment};
 use superdeck_core::{
     Action, ActionInstance, Appearance, CoreAction, Deck, DeckSettings, Effect, InstanceId, Layout,
     Page, PluginAction, Position, Profile, ProfileId,
@@ -23,6 +23,7 @@ fn plugin(name: &str) -> ActionInstance {
         plugin: "com.example".to_owned(),
         action: format!("com.example.{name}"),
         settings: Map::new(),
+        resources: Resources::new(),
     }))
 }
 

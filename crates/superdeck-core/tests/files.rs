@@ -7,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
-use superdeck_core::model::{BrightnessMode, Color, FontSize, TitleAlignment};
+use superdeck_core::model::{BrightnessMode, Color, FontSize, Resources, TitleAlignment};
 use superdeck_core::{
     Action, ActionInstance, Appearance, ConfigDir, CoreAction, DeviceSettings, Devices, Error,
     Layout, Page, PluginAction, Position, Profile, ProfileId,
@@ -61,6 +61,7 @@ fn plugin_action(settings: Value) -> ActionInstance {
         plugin: "com.example".to_owned(),
         action: "com.example.action".to_owned(),
         settings,
+        resources: Resources::new(),
     }))
 }
 
