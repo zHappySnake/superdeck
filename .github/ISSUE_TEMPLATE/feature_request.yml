@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a feature or a missing parity item with the official app
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Marketplace, account, cloud, and telemetry features are permanent non-goals
+        (see docs/ROADMAP.md) and will be closed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+      description: If this matches behavior in the official Windows app, describe how it works there.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: The problem this solves for you.

@@ -1,0 +1,50 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SuperDeck version
+      placeholder: e.g. 0.1.0 or commit hash
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options: [Flatpak, AppImage, .deb, .rpm, AUR, Nix, Built from source]
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: e.g. Stream Deck MK.2 (output of `lsusb | grep -i 0fd9` helps)
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and desktop
+      placeholder: e.g. Fedora 43, GNOME 49
+    validations:
+      required: true
+  - type: dropdown
+    id: session
+    attributes:
+      label: Display server
+      options: [Wayland, X11, Not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant output from `~/.local/state/superdeck/logs/`.
+      render: text

@@ -1,0 +1,32 @@
+name: Device support
+description: Report a device that isn't detected or doesn't work fully
+labels: [device]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Device model
+      placeholder: e.g. Stream Deck XL (2022)
+    validations:
+      required: true
+  - type: textarea
+    id: lsusb
+    attributes:
+      label: lsusb output
+      description: Output of `lsusb -v -d 0fd9:` (you can remove the serial number).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What doesn't work?
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help?
+      options:
+        - label: I can test development builds with this device
+        - label: I can capture USB traffic of this device (e.g. with Wireshark/usbmon)

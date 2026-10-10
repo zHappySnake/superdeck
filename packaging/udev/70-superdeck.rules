@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Give the user logged in at the local seat access to Elgato Stream Deck
+# devices (USB vendor ID 0fd9) so SuperDeck can run without root.
+#
+# Install to /etc/udev/rules.d/ (or /usr/lib/udev/rules.d/ from a package),
+# then run:
+#   udevadm control --reload-rules && udevadm trigger
+#
+# The file name must sort before 73-seat-late.rules for "uaccess" to apply.
+
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0fd9", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0fd9", TAG+="uaccess"

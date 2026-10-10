@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+LICENSE
+LICENSE-*
+target/
+dist/
+build/
+.svelte-kit/
+*.sdPlugin/bin/
+app/src-tauri/gen/

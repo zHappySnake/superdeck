@@ -1,0 +1,40 @@
+# Rust
+/target/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.svelte-kit/
+.vite/
+*.tsbuildinfo
+
+# Tauri
+app/src-tauri/gen/schemas/
+
+# Plugin build output
+plugins/*/*.sdPlugin/bin/
+*.streamDeckPlugin
+
+# Packaging output
+.flatpak-builder/
+packaging/**/out/
+*.AppImage
+*.deb
+*.rpm
+*.flatpak
+result
+result-*
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+.DS_Store
+
+# Local env
+.env
+.env.*
+*.log
