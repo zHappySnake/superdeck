@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/registration.schema.json",
+  "title": "SuperDeck plugin protocol: registration",
+  "description": "The first message on a connection. A plugin sends registerPlugin with the -pluginUUID it was started with; a property inspector sends registerPropertyInspector with the uuid it was given. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["event", "uuid"],
+  "properties": {
+    "event": { "enum": ["registerPlugin", "registerPropertyInspector"] },
+    "uuid": { "type": "string", "minLength": 1 }
+  }
+}

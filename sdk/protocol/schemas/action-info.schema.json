@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/action-info.schema.json",
+  "title": "SuperDeck plugin protocol: action info",
+  "description": "The inActionInfo of a property inspector: the instance it's for. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["action", "context", "device", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "action": { "$ref": "common.schema.json#/$defs/action" },
+    "context": { "$ref": "common.schema.json#/$defs/context" },
+    "device": { "$ref": "common.schema.json#/$defs/device" },
+    "payload": { "$ref": "common.schema.json#/$defs/actionPayload" }
+  }
+}

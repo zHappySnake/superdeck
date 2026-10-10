@@ -120,7 +120,8 @@ a headless mode can drive.
 
 ### `crates/superdeck-plugin-host`
 
-Implements the Stream Deck SDK host side:
+Implements the Stream Deck SDK host side, as described in
+[the plugin protocol](../sdk/protocol/README.md):
 
 - discovers plugins (bundled, then user-installed) and validates `manifest.json`
 - spawns each plugin with the documented command-line arguments (`-port`,

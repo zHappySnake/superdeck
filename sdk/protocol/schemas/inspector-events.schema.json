@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/inspector-events.schema.json",
+  "title": "SuperDeck plugin protocol: events to property inspectors",
+  "description": "Every message SuperDeck sends to a property inspector. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["event"],
+  "properties": {
+    "event": {
+      "enum": [
+        "didReceiveSettings",
+        "didReceiveResources",
+        "didReceiveGlobalSettings",
+        "sendToPropertyInspector"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/didReceiveSettings"
+    },
+    {
+      "$ref": "#/$defs/didReceiveResources"
+    },
+    {
+      "$ref": "#/$defs/didReceiveGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/sendToPropertyInspector"
+    }
+  ],
+  "$defs": {
+    "didReceiveSettings": {
+      "description": "The instance's settings: the answer to getSettings, with its id, or settings the plugin saved, without one.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveSettings"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "didReceiveResources": {
+      "description": "The instance's resources: the answer to getResources, with its id, or resources the plugin saved, without one.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveResources"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "didReceiveGlobalSettings": {
+      "description": "The plugin's global settings: the answer to getGlobalSettings, with its id, or settings the plugin saved, without one.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveGlobalSettings"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["settings"],
+          "additionalProperties": false,
+          "properties": {
+            "settings": {
+              "$ref": "common.schema.json#/$defs/settings"
+            }
+          }
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sendToPropertyInspector": {
+      "description": "The plugin sent the property inspector a message.",
+      "type": "object",
+      "required": ["event", "action", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "sendToPropertyInspector"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "description": "Any JSON value, as sent."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

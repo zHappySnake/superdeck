@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/registration-info.schema.json",
+  "title": "SuperDeck plugin protocol: registration info",
+  "description": "The -info argument of a plugin, and the inInfo of a property inspector. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["application", "plugin", "devicePixelRatio", "colors", "devices"],
+  "additionalProperties": false,
+  "properties": {
+    "application": {
+      "type": "object",
+      "required": ["font", "language", "platform", "platformVersion", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "font": {
+          "description": "The app's font family.",
+          "type": "string"
+        },
+        "language": {
+          "enum": ["de", "en", "es", "fr", "ja", "ko", "zh_CN", "zh_TW"]
+        },
+        "platform": {
+          "const": "linux"
+        },
+        "platformVersion": {
+          "description": "The kernel release.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The version of the official app whose protocol SuperDeck implements.",
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)){0,3}$"
+        }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "required": ["uuid", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "uuid": {
+          "description": "The plugin's UUID, from its manifest.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The plugin's version, from its manifest.",
+          "type": "string"
+        }
+      }
+    },
+    "devicePixelRatio": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "colors": {
+      "type": "object",
+      "required": [
+        "buttonMouseOverBackgroundColor",
+        "buttonPressedBackgroundColor",
+        "buttonPressedBorderColor",
+        "buttonPressedTextColor",
+        "highlightColor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "buttonMouseOverBackgroundColor": {
+          "$ref": "#/$defs/color"
+        },
+        "buttonPressedBackgroundColor": {
+          "$ref": "#/$defs/color"
+        },
+        "buttonPressedBorderColor": {
+          "$ref": "#/$defs/color"
+        },
+        "buttonPressedTextColor": {
+          "$ref": "#/$defs/color"
+        },
+        "highlightColor": {
+          "$ref": "#/$defs/color"
+        }
+      }
+    },
+    "devices": {
+      "description": "The devices connected when the plugin started.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "size", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/device"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "$ref": "common.schema.json#/$defs/size"
+          },
+          "type": {
+            "$ref": "common.schema.json#/$defs/deviceType"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    }
+  }
+}

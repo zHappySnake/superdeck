@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/manifest.schema.json",
+  "title": "Stream Deck plugin manifest, as SuperDeck reads it",
+  "description": "manifest.json in a <uuid>.sdPlugin directory. Lists the fields SuperDeck uses; others are allowed and ignored, since manifests are written for the official app. Image paths leave out the file extension. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["Name", "Version", "Actions"],
+  "properties": {
+    "UUID": {
+      "description": "Plugin UUID, in reverse-DNS form. It must match the directory name; manifests without one take it from there.",
+      "$ref": "#/$defs/uuid"
+    },
+    "Name": { "type": "string", "minLength": 1 },
+    "Version": {
+      "description": "Plugin version, given to the plugin in its registration info.",
+      "type": "string",
+      "minLength": 1
+    },
+    "Author": { "type": "string" },
+    "Description": { "type": "string" },
+    "URL": { "type": "string" },
+    "SupportURL": { "type": "string" },
+    "Icon": { "description": "Shown in the plugin list.", "$ref": "#/$defs/path" },
+    "Category": {
+      "description": "Heading of the plugin's group in the action list.",
+      "type": "string"
+    },
+    "CategoryIcon": { "$ref": "#/$defs/path" },
+    "CodePath": {
+      "description": "Entry point. SuperDeck runs it with Node.js when there's a Nodejs section and it ends in .js, .mjs, or .cjs.",
+      "$ref": "#/$defs/path"
+    },
+    "Nodejs": {
+      "type": "object",
+      "properties": {
+        "Version": {
+          "description": "Ignored: every plugin runs on Node.js 24 or newer.",
+          "type": "string"
+        },
+        "Debug": {
+          "description": "\"enabled\", \"break\", or Node.js arguments; used only when plugin debugging is turned on.",
+          "type": "string"
+        }
+      }
+    },
+    "SDKVersion": { "type": "integer", "minimum": 1 },
+    "Software": {
+      "type": "object",
+      "properties": {
+        "MinimumVersion": {
+          "description": "Version of the official app the plugin needs; a newer one than SuperDeck reports gets a warning.",
+          "type": "string"
+        }
+      }
+    },
+    "PropertyInspectorPath": {
+      "description": "Property inspector for actions that don't name their own.",
+      "$ref": "#/$defs/path"
+    },
+    "DefaultWindowSize": {
+      "description": "Size of windows a property inspector opens, [width, height].",
+      "type": "array",
+      "prefixItems": [
+        { "type": "integer", "minimum": 1 },
+        { "type": "integer", "minimum": 1 }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "Profiles": {
+      "description": "Profiles the plugin ships, installed from .streamDeckProfile files (milestone M6).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["Name", "DeviceType"],
+        "properties": {
+          "Name": { "$ref": "#/$defs/path" },
+          "DeviceType": { "type": "integer", "minimum": 0 },
+          "Readonly": { "type": "boolean" },
+          "DontAutoSwitchWhenInstalled": { "type": "boolean" },
+          "AutoInstall": { "type": "boolean" }
+        }
+      }
+    },
+    "Actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$"
+    },
+    "path": {
+      "description": "A path inside the plugin directory, with / between parts.",
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "^[/\\\\]|^[A-Za-z]:|(^|[/\\\\])\\.\\.([/\\\\]|$)" }
+    },
+    "action": {
+      "type": "object",
+      "required": ["UUID", "Name", "States"],
+      "properties": {
+        "UUID": { "description": "Unique within the plugin.", "$ref": "#/$defs/uuid" },
+        "Name": { "type": "string", "minLength": 1 },
+        "Icon": { "description": "Shown in the action list.", "$ref": "#/$defs/path" },
+        "Tooltip": { "type": "string" },
+        "PropertyInspectorPath": { "$ref": "#/$defs/path" },
+        "States": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/state" },
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "Controllers": {
+          "description": "SuperDeck shows only actions for Keypad, the default.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "DisableAutomaticStates": {
+          "description": "Don't toggle a two-state action when its key is released; the plugin calls setState itself.",
+          "type": "boolean"
+        },
+        "SupportedInMultiActions": { "type": "boolean" },
+        "VisibleInActionsList": { "type": "boolean" },
+        "UserTitleEnabled": { "type": "boolean" }
+      }
+    },
+    "state": {
+      "description": "How a state looks until the plugin or the user changes it.",
+      "type": "object",
+      "properties": {
+        "Image": { "$ref": "#/$defs/path" },
+        "MultiActionImage": { "$ref": "#/$defs/path" },
+        "Name": { "type": "string" },
+        "Title": { "type": "string" },
+        "ShowTitle": { "type": "boolean" },
+        "TitleAlignment": { "enum": ["top", "middle", "bottom"] },
+        "TitleColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "FontFamily": { "type": "string" },
+        "FontSize": {
+          "description": "Some manifests write the size as a string.",
+          "type": ["number", "string"]
+        },
+        "FontStyle": { "enum": ["", "Regular", "Bold", "Italic", "Bold Italic"] },
+        "FontUnderline": { "type": "boolean" }
+      }
+    }
+  }
+}

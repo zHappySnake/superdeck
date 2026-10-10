@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/plugin-events.schema.json",
+  "title": "SuperDeck plugin protocol: events to plugins",
+  "description": "Every message SuperDeck sends to a plugin. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["event"],
+  "properties": {
+    "event": {
+      "enum": [
+        "deviceDidConnect",
+        "deviceDidDisconnect",
+        "willAppear",
+        "willDisappear",
+        "keyDown",
+        "keyUp",
+        "didReceiveSettings",
+        "didReceiveResources",
+        "didReceiveGlobalSettings",
+        "titleParametersDidChange",
+        "propertyInspectorDidAppear",
+        "propertyInspectorDidDisappear",
+        "sendToPlugin",
+        "systemDidWakeUp"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/deviceDidConnect"
+    },
+    {
+      "$ref": "#/$defs/deviceDidDisconnect"
+    },
+    {
+      "$ref": "#/$defs/willAppear"
+    },
+    {
+      "$ref": "#/$defs/willDisappear"
+    },
+    {
+      "$ref": "#/$defs/keyDown"
+    },
+    {
+      "$ref": "#/$defs/keyUp"
+    },
+    {
+      "$ref": "#/$defs/didReceiveSettings"
+    },
+    {
+      "$ref": "#/$defs/didReceiveResources"
+    },
+    {
+      "$ref": "#/$defs/didReceiveGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/titleParametersDidChange"
+    },
+    {
+      "$ref": "#/$defs/propertyInspectorDidAppear"
+    },
+    {
+      "$ref": "#/$defs/propertyInspectorDidDisappear"
+    },
+    {
+      "$ref": "#/$defs/sendToPlugin"
+    },
+    {
+      "$ref": "#/$defs/systemDidWakeUp"
+    }
+  ],
+  "$defs": {
+    "deviceDidConnect": {
+      "description": "A device was plugged in, or was connected when the plugin registered.",
+      "type": "object",
+      "required": ["event", "device", "deviceInfo"],
+      "properties": {
+        "event": {
+          "const": "deviceDidConnect"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "deviceInfo": {
+          "$ref": "common.schema.json#/$defs/deviceInfo"
+        }
+      },
+      "additionalProperties": false
+    },
+    "deviceDidDisconnect": {
+      "description": "A device was unplugged.",
+      "type": "object",
+      "required": ["event", "device"],
+      "properties": {
+        "event": {
+          "const": "deviceDidDisconnect"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        }
+      },
+      "additionalProperties": false
+    },
+    "willAppear": {
+      "description": "One of the plugin's actions started showing: on a key, or in a Multi Action that started.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "willAppear"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        }
+      },
+      "additionalProperties": false
+    },
+    "willDisappear": {
+      "description": "One of the plugin's actions stopped showing.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "willDisappear"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        }
+      },
+      "additionalProperties": false
+    },
+    "keyDown": {
+      "description": "A key was pressed, or a Multi Action ran the action.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "keyDown"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/keyPayload"
+        }
+      },
+      "additionalProperties": false
+    },
+    "keyUp": {
+      "description": "A key was released, or a Multi Action ran the action.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "keyUp"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/keyPayload"
+        }
+      },
+      "additionalProperties": false
+    },
+    "didReceiveSettings": {
+      "description": "The instance's settings: the answer to getSettings, with its id, or settings the property inspector saved, without one.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveSettings"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "didReceiveResources": {
+      "description": "The instance's resources: the answer to getResources, with its id, or resources the property inspector saved, without one.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveResources"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/actionPayload"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "didReceiveGlobalSettings": {
+      "description": "The plugin's global settings: the answer to getGlobalSettings, with its id, or settings the property inspector saved, without one.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "didReceiveGlobalSettings"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["settings"],
+          "additionalProperties": false,
+          "properties": {
+            "settings": {
+              "$ref": "common.schema.json#/$defs/settings"
+            }
+          }
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "titleParametersDidChange": {
+      "description": "The title of a showing instance, or how it's drawn, changed. Also sent after willAppear for a key.",
+      "type": "object",
+      "required": ["event", "action", "context", "device", "payload"],
+      "properties": {
+        "event": {
+          "const": "titleParametersDidChange"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "settings",
+            "coordinates",
+            "controller",
+            "title",
+            "titleParameters",
+            "resources"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "settings": {
+              "$ref": "common.schema.json#/$defs/settings"
+            },
+            "coordinates": {
+              "$ref": "common.schema.json#/$defs/coordinates"
+            },
+            "controller": {
+              "const": "Keypad"
+            },
+            "state": {
+              "$ref": "common.schema.json#/$defs/state"
+            },
+            "title": {
+              "type": "string"
+            },
+            "titleParameters": {
+              "$ref": "common.schema.json#/$defs/titleParameters"
+            },
+            "resources": {
+              "$ref": "common.schema.json#/$defs/resources"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "propertyInspectorDidAppear": {
+      "description": "The instance's property inspector opened.",
+      "type": "object",
+      "required": ["event", "action", "context", "device"],
+      "properties": {
+        "event": {
+          "const": "propertyInspectorDidAppear"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        }
+      },
+      "additionalProperties": false
+    },
+    "propertyInspectorDidDisappear": {
+      "description": "The instance's property inspector closed.",
+      "type": "object",
+      "required": ["event", "action", "context", "device"],
+      "properties": {
+        "event": {
+          "const": "propertyInspectorDidDisappear"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sendToPlugin": {
+      "description": "The instance's property inspector sent the plugin a message.",
+      "type": "object",
+      "required": ["event", "action", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "sendToPlugin"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "description": "Any JSON value, as sent."
+        }
+      },
+      "additionalProperties": false
+    },
+    "systemDidWakeUp": {
+      "description": "The computer resumed from suspend.",
+      "type": "object",
+      "required": ["event"],
+      "properties": {
+        "event": {
+          "const": "systemDidWakeUp"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

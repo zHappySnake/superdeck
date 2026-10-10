@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/common.schema.json",
+  "title": "SuperDeck plugin protocol: shared definitions",
+  "description": "Definitions used by the other protocol schemas. See sdk/protocol/README.md.",
+  "$defs": {
+    "settings": {
+      "description": "Settings of an action instance or a plugin: any JSON object, kept as given.",
+      "type": "object"
+    },
+    "resources": {
+      "description": "Files an action instance refers to: names mapped to paths. Stream Deck 7.1.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "context": {
+      "description": "An action instance, as the SDK names it. SuperDeck uses the instance's ID.",
+      "type": "string",
+      "minLength": 1
+    },
+    "action": {
+      "description": "Action UUID, as in the plugin's manifest.",
+      "type": "string",
+      "minLength": 1
+    },
+    "device": {
+      "description": "Device ID: the first 16 bytes of the SHA-256 hash of the serial number, in uppercase hexadecimal.",
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "description": "State of a multi-state action, from 0.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "target": {
+      "description": "What setTitle and setImage update: 0 both, 1 the device, 2 the app. SuperDeck always updates both.",
+      "enum": [0, 1, 2]
+    },
+    "requestId": {
+      "description": "Chosen by the sender of a get command, and echoed in the answer. Stream Deck 7.1.",
+      "type": "string"
+    },
+    "coordinates": {
+      "description": "Key position, counted from 0 at the top left.",
+      "type": "object",
+      "required": ["column", "row"],
+      "additionalProperties": false,
+      "properties": {
+        "column": { "type": "integer", "minimum": 0 },
+        "row": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "size": {
+      "description": "Key grid of a device.",
+      "type": "object",
+      "required": ["columns", "rows"],
+      "additionalProperties": false,
+      "properties": {
+        "columns": { "type": "integer", "minimum": 1 },
+        "rows": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "deviceType": {
+      "description": "The SDK's device types. SuperDeck reports 0 (Stream Deck), 1 (Mini), 2 (XL), and 9 (Neo).",
+      "type": "integer",
+      "minimum": 0
+    },
+    "deviceInfo": {
+      "type": "object",
+      "required": ["name", "size", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "size": { "$ref": "#/$defs/size" },
+        "type": { "$ref": "#/$defs/deviceType" }
+      }
+    },
+    "titleParameters": {
+      "description": "How a key's title is drawn.",
+      "type": "object",
+      "required": [
+        "fontFamily",
+        "fontSize",
+        "fontStyle",
+        "fontUnderline",
+        "showTitle",
+        "titleAlignment",
+        "titleColor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fontFamily": {
+          "description": "Font family; empty for the default font.",
+          "type": "string"
+        },
+        "fontSize": { "type": "number", "exclusiveMinimum": 0 },
+        "fontStyle": { "enum": ["", "Regular", "Bold", "Italic", "Bold Italic"] },
+        "fontUnderline": { "type": "boolean" },
+        "showTitle": { "type": "boolean" },
+        "titleAlignment": { "enum": ["top", "middle", "bottom"] },
+        "titleColor": { "type": "string", "pattern": "^#[0-9a-f]{6}$" }
+      }
+    },
+    "actionPayload": {
+      "description": "What willAppear, willDisappear, didReceiveSettings and didReceiveResources say about an instance: on a key, or a step of a Multi Action.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["settings", "coordinates", "controller", "isInMultiAction", "resources"],
+          "additionalProperties": false,
+          "properties": {
+            "settings": { "$ref": "#/$defs/settings" },
+            "coordinates": { "$ref": "#/$defs/coordinates" },
+            "controller": { "const": "Keypad" },
+            "isInMultiAction": { "const": false },
+            "state": { "$ref": "#/$defs/state" },
+            "resources": { "$ref": "#/$defs/resources" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["settings", "controller", "isInMultiAction", "resources"],
+          "additionalProperties": false,
+          "properties": {
+            "settings": { "$ref": "#/$defs/settings" },
+            "controller": { "const": "Keypad" },
+            "isInMultiAction": { "const": true },
+            "state": { "$ref": "#/$defs/state" },
+            "resources": { "$ref": "#/$defs/resources" }
+          }
+        }
+      ]
+    },
+    "keyPayload": {
+      "description": "What keyDown and keyUp say about an instance. In a Multi Action, userDesiredState is the state the user chose for the step.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["settings", "coordinates", "controller", "isInMultiAction", "resources"],
+          "additionalProperties": false,
+          "properties": {
+            "settings": { "$ref": "#/$defs/settings" },
+            "coordinates": { "$ref": "#/$defs/coordinates" },
+            "controller": { "const": "Keypad" },
+            "isInMultiAction": { "const": false },
+            "state": { "$ref": "#/$defs/state" },
+            "resources": { "$ref": "#/$defs/resources" }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "settings",
+            "controller",
+            "isInMultiAction",
+            "userDesiredState",
+            "resources"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "settings": { "$ref": "#/$defs/settings" },
+            "controller": { "const": "Keypad" },
+            "isInMultiAction": { "const": true },
+            "state": { "$ref": "#/$defs/state" },
+            "userDesiredState": { "$ref": "#/$defs/state" },
+            "resources": { "$ref": "#/$defs/resources" }
+          }
+        }
+      ]
+    }
+  }
+}

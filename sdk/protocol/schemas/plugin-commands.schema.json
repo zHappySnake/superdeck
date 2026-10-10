@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/plugin-commands.schema.json",
+  "title": "SuperDeck plugin protocol: commands from plugins",
+  "description": "Every message a plugin may send after registering. Fields SuperDeck doesn't use are allowed, since plugins are written for the official app. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["event"],
+  "properties": {
+    "event": {
+      "enum": [
+        "setSettings",
+        "getSettings",
+        "setGlobalSettings",
+        "getGlobalSettings",
+        "setResources",
+        "getResources",
+        "openUrl",
+        "logMessage",
+        "setTitle",
+        "setImage",
+        "setState",
+        "showAlert",
+        "showOk",
+        "switchToProfile",
+        "sendToPropertyInspector",
+        "setFeedback",
+        "setFeedbackLayout",
+        "setTriggerDescription"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/setSettings"
+    },
+    {
+      "$ref": "#/$defs/getSettings"
+    },
+    {
+      "$ref": "#/$defs/setGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/getGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/setResources"
+    },
+    {
+      "$ref": "#/$defs/getResources"
+    },
+    {
+      "$ref": "#/$defs/openUrl"
+    },
+    {
+      "$ref": "#/$defs/logMessage"
+    },
+    {
+      "$ref": "#/$defs/setTitle"
+    },
+    {
+      "$ref": "#/$defs/setImage"
+    },
+    {
+      "$ref": "#/$defs/setState"
+    },
+    {
+      "$ref": "#/$defs/showAlert"
+    },
+    {
+      "$ref": "#/$defs/showOk"
+    },
+    {
+      "$ref": "#/$defs/switchToProfile"
+    },
+    {
+      "$ref": "#/$defs/sendToPropertyInspector"
+    },
+    {
+      "$ref": "#/$defs/setFeedback"
+    },
+    {
+      "$ref": "#/$defs/setFeedbackLayout"
+    },
+    {
+      "$ref": "#/$defs/setTriggerDescription"
+    }
+  ],
+  "$defs": {
+    "setSettings": {
+      "description": "Save the instance's settings, replacing them.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/settings"
+        }
+      }
+    },
+    "getSettings": {
+      "description": "Ask for the instance's settings; answered with didReceiveSettings.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "getSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "setGlobalSettings": {
+      "description": "Save the plugin's global settings, replacing them. The context is ignored: the connection says whose they are.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "setGlobalSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/settings"
+        }
+      }
+    },
+    "getGlobalSettings": {
+      "description": "Ask for the plugin's global settings; answered with didReceiveGlobalSettings. The context is ignored.",
+      "type": "object",
+      "required": ["event"],
+      "properties": {
+        "event": {
+          "const": "getGlobalSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "setResources": {
+      "description": "Save the instance's resources, replacing them. Stream Deck 7.1.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setResources"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/resources"
+        }
+      }
+    },
+    "getResources": {
+      "description": "Ask for the instance's resources; answered with didReceiveResources. Stream Deck 7.1.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "getResources"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "openUrl": {
+      "description": "Open a URL in the default browser.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "openUrl"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "logMessage": {
+      "description": "Write a message to the plugin's log.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "logMessage"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["message"],
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "setTitle": {
+      "description": "Set the title the instance shows, for one state or both.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setTitle"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "The title; leaving it out resets it."
+            },
+            "state": {
+              "$ref": "common.schema.json#/$defs/state"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/target"
+            }
+          }
+        }
+      }
+    },
+    "setImage": {
+      "description": "Set the image the instance shows, for one state or both.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setImage"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string",
+              "description": "A data: URL, or a path to an image inside the plugin directory; leaving it out resets it."
+            },
+            "state": {
+              "$ref": "common.schema.json#/$defs/state"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/target"
+            }
+          }
+        }
+      }
+    },
+    "setState": {
+      "description": "Change the instance's state.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setState"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "$ref": "common.schema.json#/$defs/state"
+            }
+          }
+        }
+      }
+    },
+    "showAlert": {
+      "description": "Show a warning on the key for a moment.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "showAlert"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        }
+      }
+    },
+    "showOk": {
+      "description": "Show a check mark on the key for a moment.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "showOk"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        }
+      }
+    },
+    "switchToProfile": {
+      "description": "Switch a device to a profile the plugin ships, or back to the previous profile when profile is left out. The context is ignored.",
+      "type": "object",
+      "required": ["event", "device"],
+      "properties": {
+        "event": {
+          "const": "switchToProfile"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "device": {
+          "$ref": "common.schema.json#/$defs/device"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "type": "string",
+              "description": "Profile name, as in the manifest's Profiles."
+            },
+            "page": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "sendToPropertyInspector": {
+      "description": "Send a message to the instance's property inspector, if it's open.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "sendToPropertyInspector"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "description": "Any JSON value."
+        }
+      }
+    },
+    "setFeedback": {
+      "description": "Stream Deck +; accepted and ignored.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "setFeedback"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "setFeedbackLayout": {
+      "description": "Stream Deck +; accepted and ignored.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "setFeedbackLayout"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "setTriggerDescription": {
+      "description": "Stream Deck +; accepted and ignored.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "setTriggerDescription"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zhappysnake/superdeck/sdk/protocol/schemas/inspector-commands.schema.json",
+  "title": "SuperDeck plugin protocol: commands from property inspectors",
+  "description": "Every message a property inspector may send after registering. The context is the inspector's own instance. See sdk/protocol/README.md.",
+  "type": "object",
+  "required": ["event"],
+  "properties": {
+    "event": {
+      "enum": [
+        "setSettings",
+        "getSettings",
+        "setGlobalSettings",
+        "getGlobalSettings",
+        "setResources",
+        "getResources",
+        "openUrl",
+        "logMessage",
+        "sendToPlugin"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/setSettings"
+    },
+    {
+      "$ref": "#/$defs/getSettings"
+    },
+    {
+      "$ref": "#/$defs/setGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/getGlobalSettings"
+    },
+    {
+      "$ref": "#/$defs/setResources"
+    },
+    {
+      "$ref": "#/$defs/getResources"
+    },
+    {
+      "$ref": "#/$defs/openUrl"
+    },
+    {
+      "$ref": "#/$defs/logMessage"
+    },
+    {
+      "$ref": "#/$defs/sendToPlugin"
+    }
+  ],
+  "$defs": {
+    "setSettings": {
+      "description": "Save the instance's settings, replacing them.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/settings"
+        }
+      }
+    },
+    "getSettings": {
+      "description": "Ask for the instance's settings; answered with didReceiveSettings.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "getSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "setGlobalSettings": {
+      "description": "Save the plugin's global settings, replacing them. The context is ignored: the connection says whose they are.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "setGlobalSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/settings"
+        }
+      }
+    },
+    "getGlobalSettings": {
+      "description": "Ask for the plugin's global settings; answered with didReceiveGlobalSettings. The context is ignored.",
+      "type": "object",
+      "required": ["event"],
+      "properties": {
+        "event": {
+          "const": "getGlobalSettings"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "setResources": {
+      "description": "Save the instance's resources, replacing them. Stream Deck 7.1.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "setResources"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "$ref": "common.schema.json#/$defs/resources"
+        }
+      }
+    },
+    "getResources": {
+      "description": "Ask for the instance's resources; answered with didReceiveResources. Stream Deck 7.1.",
+      "type": "object",
+      "required": ["event", "context"],
+      "properties": {
+        "event": {
+          "const": "getResources"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "id": {
+          "$ref": "common.schema.json#/$defs/requestId"
+        }
+      }
+    },
+    "openUrl": {
+      "description": "Open a URL in the default browser.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "openUrl"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "logMessage": {
+      "description": "Write a message to the plugin's log.",
+      "type": "object",
+      "required": ["event", "payload"],
+      "properties": {
+        "event": {
+          "const": "logMessage"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["message"],
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "sendToPlugin": {
+      "description": "Send the plugin a message about this instance.",
+      "type": "object",
+      "required": ["event", "context", "payload"],
+      "properties": {
+        "event": {
+          "const": "sendToPlugin"
+        },
+        "action": {
+          "$ref": "common.schema.json#/$defs/action"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/context"
+        },
+        "payload": {
+          "description": "Any JSON value."
+        }
+      }
+    }
+  }
+}
