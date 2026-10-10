@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Name": "Counter",
+  "Version": "1.2.0.0",
+  "Author": "Example",
+  "Description": "Counts key presses.",
+  "UUID": "com.example.counter",
+  "Icon": "imgs/plugin",
+  "Category": "Counter",
+  "CategoryIcon": "imgs/plugin",
+  "CodePath": "bin/plugin.js",
+  "CodePathWin": "bin/plugin.exe",
+  "SDKVersion": 2,
+  "Software": { "MinimumVersion": "6.5" },
+  "OS": [
+    { "Platform": "mac", "MinimumVersion": "12" },
+    { "Platform": "windows", "MinimumVersion": "10" }
+  ],
+  "Nodejs": { "Version": "20", "Debug": "enabled" },
+  "ApplicationsToMonitor": { "mac": ["com.apple.mail"] },
+  "Actions": [
+    {
+      "UUID": "com.example.counter.increment",
+      "Name": "Increment",
+      "Icon": "imgs/action",
+      "Tooltip": "Adds one",
+      "PropertyInspectorPath": "ui/increment.html",
+      "Controllers": ["Keypad"],
+      "States": [{ "Image": "imgs/key", "TitleAlignment": "middle", "FontSize": 16 }]
+    },
+    {
+      "UUID": "com.example.counter.toggle",
+      "Name": "Toggle",
+      "Icon": "imgs/action",
+      "DisableAutomaticStates": true,
+      "SupportedInMultiActions": false,
+      "States": [
+        { "Image": "imgs/key", "Name": "Off", "Title": "Off" },
+        { "Image": "imgs/key-on", "Name": "On", "Title": "On", "TitleColor": "#FFCC00" }
+      ]
+    },
+    {
+      "UUID": "com.example.counter.dial",
+      "Name": "Dial",
+      "Icon": "imgs/action",
+      "Controllers": ["Encoder"],
+      "Encoder": { "layout": "$X1" },
+      "States": [{ "Image": "imgs/key" }]
+    }
+  ],
+  "Profiles": [{ "Name": "profiles/counter", "DeviceType": 0 }]
+}

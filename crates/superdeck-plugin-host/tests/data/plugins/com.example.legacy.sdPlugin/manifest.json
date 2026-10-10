@@ -1,0 +1,13 @@
+﻿{
+  "Name": "Legacy",
+  "Version": "0.9",
+  "CodePathMac": "Legacy",
+  "CodePathWin": "Legacy.exe",
+  "Actions": [
+    {
+      "UUID": "com.example.legacy.Action",
+      "Name": "Action",
+      "States": [{ "Image": "imgs\\key", "FontSize": "10", "FontStyle": "" }]
+    }
+  ]
+}

@@ -27,6 +27,7 @@ serde_json = { version = "1.0.151", features = ["preserve_order"] }
 sha2 = "0.11.0"
 superdeck-core = { path = "crates/superdeck-core" }
 superdeck-device = { path = "crates/superdeck-device" }
+superdeck-plugin-host = { path = "crates/superdeck-plugin-host" }
 superdeck-render = { path = "crates/superdeck-render" }
 sys-locale = "0.3.2"
 tempfile = "3.27.0"

@@ -1,0 +1,7 @@
+{
+  "Name": "Web",
+  "Version": "1.0",
+  "UUID": "com.example.web",
+  "CodePath": "index.html",
+  "Actions": [{ "UUID": "com.example.web.open", "Name": "Open", "States": [{}] }]
+}

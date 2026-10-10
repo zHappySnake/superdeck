@@ -1341,6 +1341,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "superdeck-plugin-host"
+version = "0.0.0"
+dependencies = [
+ "boon",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "superdeck-render"
 version = "0.0.0"
 dependencies = [

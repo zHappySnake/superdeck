@@ -10,3 +10,6 @@ app/src-tauri/gen/
 
 # Written by superdeck-core; tests compare them byte for byte.
 crates/superdeck-core/tests/data/
+
+# Sample plugins; one starts with a byte order mark on purpose.
+crates/superdeck-plugin-host/tests/data/

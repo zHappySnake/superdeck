@@ -1,0 +1,21 @@
+[package]
+name = "superdeck-plugin-host"
+description = "Runs Stream Deck plugins for SuperDeck and talks to them over the SDK's WebSocket protocol"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+boon.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true
