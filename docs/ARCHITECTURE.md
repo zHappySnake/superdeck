@@ -94,8 +94,9 @@ official app.
 
 The application model: devices → profiles → pages → keys → action instances,
 plus folders, Multi Actions, and the core navigation actions. It owns
-persistence (our own versioned JSON format with migrations; the official
-`.streamDeckProfile` format is handled only by import/export converters),
+persistence (our own versioned JSON format with migrations, described in
+[profile-format.md](profile-format.md); the official `.streamDeckProfile`
+format is handled only by import/export converters),
 undo/redo, smart profile switching, and dispatching input events
 to the core or to plugins. It exposes an async API that both the Tauri app and
 a headless mode can drive.
