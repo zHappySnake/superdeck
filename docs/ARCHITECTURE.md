@@ -121,19 +121,31 @@ a headless mode can drive.
 ### `crates/superdeck-plugin-host`
 
 Implements the Stream Deck SDK host side, as described in
-[the plugin protocol](../sdk/protocol/README.md):
+[the plugin protocol](../sdk/protocol/README.md). It knows plugins and the
+protocol, but nothing about profiles: contexts and device IDs are strings
+the app hands it.
 
-- discovers plugins (bundled, then user-installed) and validates `manifest.json`
-- spawns each plugin with the documented command-line arguments (`-port`,
-  `-pluginUUID`, `-registerEvent`, `-info`). JavaScript `CodePath` entries
-  all run on Node.js 24 LTS, whatever version the manifest requests: the
-  bundled runtime in Flatpak/AppImage, or the system `nodejs` (24 or newer,
-  checked before starting plugins) in native packages
-- runs one WebSocket server on `127.0.0.1` at a random port, accepts
-  registrations from plugins and property inspectors, and routes events and
-  commands between them and the core
-- supervises processes (restart with backoff, log capture to
-  `$XDG_STATE_HOME/superdeck/logs/plugins/`)
+- `discover` finds `<uuid>.sdPlugin` directories (bundled, then
+  user-installed, which win) and reads their manifests leniently, deciding
+  for each plugin how it runs (a Node.js script) or why it can't yet.
+- `Router` is the host's state with no I/O, like `Deck`: registration with
+  start tokens, which contexts each plugin owns (those it has had events
+  for), property inspectors, devices, and global settings. It turns
+  connections and messages into messages to send and `Request`s for the
+  app, and is tested on its own.
+- The server is one Tokio task that owns the router, fed by a task per
+  WebSocket connection (on `127.0.0.1`, random port; web `Origin`s,
+  oversized messages, and connections that don't register in time are
+  refused) and by the plugin supervisors.
+- A supervisor per Node.js plugin starts it with the documented arguments
+  in its directory, copies its output to
+  `$XDG_STATE_HOME/superdeck/logs/plugins/<uuid>.log`, and starts it again
+  with backoff when it exits. All plugins run on Node.js 24 or newer,
+  checked before any starts: the bundled runtime in Flatpak/AppImage
+  (`$SUPERDECK_NODE`), or `node` on `PATH` in native packages.
+- `PluginHost` is the app's handle: non-blocking calls to send events and
+  report devices, and a queue of requests (set a title, save settings, …)
+  for the app to carry out on its decks.
 
 ### `app/` (Tauri)
 
