@@ -2,6 +2,8 @@
 
 //! `superdeck-cli`: drive a Stream Deck by hand, to test the device layer.
 
+mod run;
+
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -81,6 +83,12 @@ enum Command {
     /// Animated GIFs play until Ctrl+C. With `--save`, writes a PNG instead
     /// and needs no device.
     Render(RenderArgs),
+    /// Run the device from its profiles, as the app will, until Ctrl+C.
+    ///
+    /// Uses `devices.json` and the profiles in the configuration directory;
+    /// a new device gets an empty Default profile. Plugin events are
+    /// printed, since there's no plugin host yet.
+    Run(run::RunArgs),
     /// Turn every key black.
     Clear,
     /// Reset the device to its boot logo.
@@ -325,6 +333,7 @@ fn run_on_device(info: &DeviceInfo, device: &mut Device, command: Command) -> Re
                 device.set_key_image(key, &DynamicImage::ImageRgb8(image))?;
             }
         }
+        Command::Run(args) => run::run(info, device, &args)?,
         Command::Render(args) => {
             let keys = keys(device, args.key)?;
             let encode =

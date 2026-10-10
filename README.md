@@ -5,9 +5,10 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha.** The device layer (milestone M1), key rendering, and
-> the profile format are in place, with a command-line tool for testing
-> devices; there's no app yet. See the [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer and the core (milestones M1 and
+> M2) are in place: profiles, pages, folders, and the built-in actions run on
+> a device from the command line. There's no app or plugin support yet. See
+> the [roadmap](docs/ROADMAP.md) for what comes next.
 
 ## Goals
 
@@ -95,6 +96,7 @@ cargo run -p superdeck-cli -- test-pattern    # check image orientation
 cargo run -p superdeck-cli -- events          # print key presses
 cargo run -p superdeck-cli -- render -i icon.svg -t Mute --align bottom
                                               # draw a key as the app will
+cargo run -p superdeck-cli -- run             # run the device from its profiles
 cargo run -p superdeck-cli -- --help          # everything else
 ```
 

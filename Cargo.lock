@@ -1310,6 +1310,8 @@ dependencies = [
  "anyhow",
  "clap",
  "image",
+ "serde_json",
+ "superdeck-core",
  "superdeck-device",
  "superdeck-render",
 ]

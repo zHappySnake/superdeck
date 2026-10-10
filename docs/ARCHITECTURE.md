@@ -57,9 +57,12 @@ plugins.
 ### `crates/superdeck-cli`
 
 A small binary for driving a device by hand (`list`, `info`, `watch`,
-`events`, `brightness`, `fill`, `image`, `render`, `test-pattern`, `clear`,
-`reset`), and for recording captures with `--record`. `render` draws a key
-with `superdeck-render`, on a device or into a PNG file. Not shipped to users.
+`events`, `brightness`, `fill`, `image`, `render`, `run`, `test-pattern`,
+`clear`, `reset`), and for recording captures with `--record`. `render` draws
+a key with `superdeck-render`, on a device or into a PNG file. `run` is the
+headless mode: it runs the device from the profiles in the configuration
+directory with a `superdeck-core` `Deck`, and prints plugin events until the
+plugin host exists. Not shipped to users.
 
 ### `crates/superdeck-render`
 
