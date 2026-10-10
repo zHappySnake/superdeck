@@ -1,0 +1,22 @@
+# synthetic: hand-written from docs/device-protocol.md, not yet checked
+# against hardware. Serial number and firmware version are made up; the
+# bytes between the report ID and the string are unknown and left as 0.
+model mini-mk2
+
+write 02 00*1023
+feature-get 03 17 -> 03 00 00 00 00 41 4c 31 32 48 31 41 30 31 32 33 34
+feature-get 04 17 -> 04 00 00 00 00 31 2e 30 2e 31 37 30 31 33 33 00 00
+feature-set 05 55 aa d1 01 32 00*11
+
+# 1500-byte image on key 3 (sent 1-based as 4), in 1008-byte pages
+# counted from 0.
+write 02 01 00 00 00 04 00*10 ab*1008
+write 02 01 01 00 01 04 00*10 ab*492 00*516
+
+# Key 0 down; key 5 down; key 0 up; key 5 up.
+read 7 -> 01 01 00*5
+read 7 -> 01 01 00*4 01
+read 7 -> 01 00*5 01
+read 7 -> 01 00*6
+
+feature-set 0b 63 00*15

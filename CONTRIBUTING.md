@@ -55,7 +55,11 @@ Pull requests adding them will be closed.
 rustup reads `rust-toolchain.toml` and installs the right compiler, `rustfmt`
 and `clippy` automatically.
 
-### System libraries (needed once the Tauri app lands)
+### System libraries
+
+The Rust crates need a C compiler, `pkg-config`, and the libudev headers
+(`hidapi` compiles its C sources). The rest of the list below is for the
+Tauri app, which doesn't exist yet; installing it now saves a step later.
 
 **Debian / Ubuntu**
 

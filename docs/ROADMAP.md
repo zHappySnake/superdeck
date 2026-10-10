@@ -143,6 +143,11 @@ dev tooling, CI.
 - `superdeck-cli` for manual testing (`list`, `fill`, `image`, `brightness`, `events`)
 - Image pipeline per device (size, rotation, mirroring, JPEG/BMP encoding)
 
+Status: implemented. The protocol tests replay synthetic captures written
+from [device-protocol.md](device-protocol.md); M1 is done once each v1
+model has been checked on hardware and has a recorded capture (see
+[Verification status](device-protocol.md#verification-status)).
+
 ### M2: Core model and rendering
 
 - Profile/page/folder/action data model; versioned JSON on-disk format with a

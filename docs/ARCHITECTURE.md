@@ -30,14 +30,35 @@ roadmap explains _what_ and _when_; this file explains _how_.
 
 ### `crates/superdeck-device`
 
-Our own implementation of the Stream Deck USB HID protocol. It does I/O
-through the `hidapi` crate (hidraw backend) and watches for devices being
-plugged in or removed with a `udev` monitor. Each model is a small driver
-describing its key layout, image size and orientation, image format, and
-report layout; the protocol logic is separated from I/O so it can be tested
-against recorded USB captures. It produces a stream of input
-events (key down/up, later dial/touch) and accepts output commands (set key
-image, brightness, reset). It has no knowledge of profiles or plugins.
+Our own implementation of the Stream Deck USB HID protocol, documented in
+[device-protocol.md](device-protocol.md). It has no knowledge of profiles or
+plugins.
+
+- `Model` and its `Spec` describe each device: key layout, image size,
+  orientation and format, and which of the three protocol generations it
+  speaks.
+- `protocol` turns commands into report bytes and report bytes into key
+  states. It's pure: no I/O.
+- `Transport` is the only I/O boundary: write, feature report get/set,
+  read. `HidTransport` is the real one, on the `hidapi` crate (hidraw
+  backend). `Recorder` wraps a transport and writes a text capture of the
+  traffic; `Replay` plays a capture back as a fake device, which is how the
+  protocol is tested without hardware.
+- `Device` is an open device: key images (any image, scaled, oriented and
+  encoded per model, or pre-encoded bytes for callers that cache), brightness,
+  reset, serial number and firmware queries, and key down/up events derived
+  from successive key state reports. Calls block; a `Device` is owned by one
+  thread at a time, which interleaves short input reads with output commands.
+- `DeviceManager` lists supported devices, opens them, and reports
+  connects and disconnects. It listens for hidraw events from a `udev`
+  monitor and rescans with hidapi on each one, falling back to rescanning
+  every second when udev events aren't available.
+
+### `crates/superdeck-cli`
+
+A small binary for driving a device by hand (`list`, `info`, `watch`,
+`events`, `brightness`, `fill`, `image`, `test-pattern`, `clear`, `reset`),
+and for recording captures with `--record`. Not shipped to users.
 
 ### `crates/superdeck-render`
 
