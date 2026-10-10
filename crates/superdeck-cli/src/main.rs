@@ -2,15 +2,20 @@
 
 //! `superdeck-cli`: drive a Stream Deck by hand, to test the device layer.
 
+mod run;
+
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::{Context, Result, bail};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use superdeck_device::image::{self, DynamicImage, Rgb, RgbImage};
-use superdeck_device::{Device, DeviceChange, DeviceInfo, DeviceManager, KeyEvent, Recorder};
+use superdeck_device::{
+    Device, DeviceChange, DeviceInfo, DeviceManager, KeyEvent, Recorder, encode_key_image,
+};
+use superdeck_render::{Rendered, Renderer, TitleAlignment, TitleStyle};
 
 #[derive(Parser)]
 #[command(
@@ -73,10 +78,103 @@ enum Command {
     /// along its top edge. Key colors run through the rainbow in key order,
     /// starting with red at the top left.
     TestPattern,
+    /// Render a key the way the app will (image plus title) and show it.
+    ///
+    /// Animated GIFs play until Ctrl+C. With `--save`, writes a PNG instead
+    /// and needs no device.
+    Render(RenderArgs),
+    /// Run the device from its profiles, as the app will, until Ctrl+C.
+    ///
+    /// Uses `devices.json` and the profiles in the configuration directory;
+    /// a new device gets an empty Default profile. Plugin events are
+    /// printed, since there's no plugin host yet.
+    Run(run::RunArgs),
     /// Turn every key black.
     Clear,
     /// Reset the device to its boot logo.
     Reset,
+}
+
+#[derive(Args)]
+struct RenderArgs {
+    /// Key index. Defaults to all keys.
+    #[arg(short, long)]
+    key: Option<u8>,
+    /// Image: a file (PNG, JPEG, BMP, GIF, SVG) or a `data:` URL.
+    #[arg(short, long)]
+    image: Option<String>,
+    /// Title text; `\n` starts a new line.
+    #[arg(short, long, default_value = "")]
+    title: String,
+    /// Vertical position of the title.
+    #[arg(long, value_enum, default_value_t = Align::Middle)]
+    align: Align,
+    /// Font size in pixels on a 72-pixel key.
+    #[arg(long, default_value_t = 12.0)]
+    font_size: f32,
+    /// Font family. Defaults to the bundled Noto Sans.
+    #[arg(long)]
+    font: Option<String>,
+    /// Bold title.
+    #[arg(long)]
+    bold: bool,
+    /// Italic title.
+    #[arg(long)]
+    italic: bool,
+    /// Underlined title.
+    #[arg(long)]
+    underline: bool,
+    /// Title color, as for `fill`.
+    #[arg(long, value_parser = parse_color, default_value = "white")]
+    color: Rgb<u8>,
+    /// Write the key to a PNG file instead of a device (an animation's first
+    /// frame).
+    #[arg(long, value_name = "FILE")]
+    save: Option<PathBuf>,
+    /// Key size in pixels for `--save`.
+    #[arg(long, default_value_t = 72, requires = "save", value_parser = clap::value_parser!(u32).range(1..=1024))]
+    size: u32,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum Align {
+    Top,
+    Middle,
+    Bottom,
+}
+
+impl RenderArgs {
+    fn render(&self, size: u32) -> Result<Rendered> {
+        let mut renderer = Renderer::new();
+        let image = match &self.image {
+            None => None,
+            Some(url) if url.starts_with("data:") => Some(renderer.load_data_url(url)?),
+            Some(path) => {
+                let data = std::fs::read(path).with_context(|| format!("could not read {path}"))?;
+                Some(
+                    renderer
+                        .load_image(&data)
+                        .with_context(|| format!("could not load {path}"))?,
+                )
+            }
+        };
+        let style = TitleStyle {
+            visible: true,
+            font_family: self.font.clone(),
+            font_size: self.font_size,
+            bold: self.bold,
+            italic: self.italic,
+            underline: self.underline,
+            alignment: match self.align {
+                Align::Top => TitleAlignment::Top,
+                Align::Middle => TitleAlignment::Middle,
+                Align::Bottom => TitleAlignment::Bottom,
+            },
+            color: self.color,
+        };
+        let title = self.title.replace("\\n", "\n");
+        Ok(renderer.render(image.as_ref(), &title, &style, size))
+    }
 }
 
 fn main() -> ExitCode {
@@ -94,6 +192,7 @@ fn run(cli: Cli) -> Result<()> {
     match cli.command {
         Command::List => list(&mut manager),
         Command::Watch => watch(&mut manager),
+        Command::Render(args @ RenderArgs { save: Some(_), .. }) => save_render(&args),
         command => {
             let (info, mut device) = open(&mut manager, cli.device.as_deref(), cli.record)?;
             run_on_device(&info, &mut device, command)
@@ -137,6 +236,14 @@ fn watch(manager: &mut DeviceManager) -> Result<()> {
             }
         }
     }
+}
+
+fn save_render(args: &RenderArgs) -> Result<()> {
+    let path = args.save.as_ref().expect("called with --save");
+    args.render(args.size)?
+        .first_frame()
+        .save(path)
+        .with_context(|| format!("could not write {}", path.display()))
 }
 
 fn open(
@@ -224,6 +331,35 @@ fn run_on_device(info: &DeviceInfo, device: &mut Device, command: Command) -> Re
             for key in 0..device.key_count() {
                 let image = test_pattern(spec.key_size, key, device.key_count());
                 device.set_key_image(key, &DynamicImage::ImageRgb8(image))?;
+            }
+        }
+        Command::Run(args) => run::run(info, device, &args)?,
+        Command::Render(args) => {
+            let keys = keys(device, args.key)?;
+            let encode =
+                |image: &RgbImage| encode_key_image(spec, &DynamicImage::ImageRgb8(image.clone()));
+            match args.render(spec.key_size)? {
+                Rendered::Still(image) => {
+                    let data = encode(&image)?;
+                    for &key in &keys {
+                        device.set_key_image_data(key, &data)?;
+                    }
+                }
+                Rendered::Animated(frames) => {
+                    let frames = frames
+                        .iter()
+                        .map(|frame| Ok((encode(&frame.image)?, frame.delay)))
+                        .collect::<Result<Vec<_>>>()?;
+                    eprintln!("Playing {} frames; Ctrl+C to stop.", frames.len());
+                    loop {
+                        for (data, delay) in &frames {
+                            for &key in &keys {
+                                device.set_key_image_data(key, data)?;
+                            }
+                            std::thread::sleep(*delay);
+                        }
+                    }
+                }
             }
         }
         Command::Clear => device.clear()?,

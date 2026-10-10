@@ -148,10 +148,11 @@ Studio (`00aa`), and the Neo's info bar and touch keys.
 
 ## Verification status
 
-No model has been checked against real hardware by the SuperDeck project
-yet. The protocol tests in `crates/superdeck-device/tests/` replay
-**synthetic** captures written from this document; they keep the driver
-consistent with these notes but can't prove the notes right.
+Only the MK.2 has been checked against real hardware so far. Most protocol
+tests in `crates/superdeck-device/tests/` replay **synthetic** captures
+written from this document; they keep the driver consistent with these notes
+but can't prove the notes right. Models with a recorded capture also replay
+real traffic.
 
 The Module 6/15/32 entries are the least certain: they assume the modules
 behave like the Mini MK.2, MK.2, and XL (v2) respectively.
@@ -171,6 +172,6 @@ To verify a model, with the device plugged in and the udev rule installed:
 
 Then update the table below in the same pull request.
 
-| Model | Verified by | Firmware | Notes |
-| ----- | ----------- | -------- | ----- |
-| –     |             |          |       |
+| Model | Verified by | Firmware | Notes                                                        |
+| ----- | ----------- | -------- | ------------------------------------------------------------ |
+| MK.2  | zHappySnake | 1.02.000 | All steps pass; capture in `tests/captures/mk2-recorded.cap` |

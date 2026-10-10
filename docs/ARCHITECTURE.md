@@ -57,28 +57,66 @@ plugins.
 ### `crates/superdeck-cli`
 
 A small binary for driving a device by hand (`list`, `info`, `watch`,
-`events`, `brightness`, `fill`, `image`, `test-pattern`, `clear`, `reset`),
-and for recording captures with `--record`. Not shipped to users.
+`events`, `brightness`, `fill`, `image`, `render`, `run`, `test-pattern`,
+`clear`, `reset`), and for recording captures with `--record`. `render` draws
+a key with `superdeck-render`, on a device or into a PNG file. `run` is the
+headless mode: it runs the device from the profiles in the configuration
+directory with a `superdeck-core` `Deck`, and prints plugin events until the
+plugin host exists. Not shipped to users.
 
 ### `crates/superdeck-render`
 
-Turns an action's visual state into the exact bitmap a device key needs: the
-plugin-supplied image (PNG, JPEG, SVG, GIF frame, or data URL) plus the title
-overlay drawn with the title settings. Text is shaped and laid out with
-`cosmic-text`. The default font is a bundled copy of Noto Sans (OFL-1.1), so
-keys look identical on every distribution; users can pick any installed font.
-Rendering is pure and deterministic, so it can be snapshot-tested without
-hardware.
+Turns a key's image and title into the bitmap the key shows. It knows
+nothing about devices, profiles, or plugins.
+
+- A `Renderer` holds the fonts and is created once. It loads a `KeyImage`
+  from bytes or a `data:` URL (as sent by `setImage`), recognizing PNG, JPEG,
+  BMP, still or animated GIF, and SVG from the content rather than the
+  declared type. Loaded images are kept premultiplied and scaled down to at
+  most 288 px, so they can be rendered at any key size cheaply. Decoding has
+  size limits, and SVGs can't reference files.
+- `render(image, title, style, size)` draws the image scaled to fit and
+  centered on black, then the title, and returns an upright RGB image, or
+  one per frame with its delay for an animation. `superdeck-device` then
+  scales, rotates, and encodes it for the model.
+- Titles follow the SDK's title parameters (font, size, bold, italic,
+  underline, top/middle/bottom, color, shown or hidden). Text is shaped and
+  laid out with `cosmic-text`; lines are centered and not wrapped, and get a
+  thin dark outline so they stay readable on any image. Font sizes are
+  pixels on a 72 px key and scale with the key.
+- The default font is a bundled copy of Noto Sans (OFL-1.1), so keys look
+  identical on every distribution; users can pick any installed font. SVG
+  text uses the same font database, through `resvg`.
+
+Rendering with only the bundled fonts is deterministic, so it is tested
+against snapshot images without hardware. The title metrics (size unit,
+margins, outline) are our own choices and still need comparing with the
+official app.
 
 ### `crates/superdeck-core`
 
 The application model: devices → profiles → pages → keys → action instances,
 plus folders, Multi Actions, and the core navigation actions. It owns
-persistence (our own versioned JSON format with migrations; the official
-`.streamDeckProfile` format is handled only by import/export converters),
+persistence (our own versioned JSON format with migrations, described in
+[profile-format.md](profile-format.md); the official `.streamDeckProfile`
+format is handled only by import/export converters),
 undo/redo, smart profile switching, and dispatching input events
 to the core or to plugins. It exposes an async API that both the Tauri app and
 a headless mode can drive.
+
+- `ConfigDir` reads and writes the configuration directory, checking every
+  rule of the format.
+- `Deck` runs one profile on one device. It does no I/O and reads no clock:
+  callers pass in key presses and the time, and carry out the `Effect`s it
+  returns (draw a key, set the brightness, sleep or wake, send a plugin
+  event, switch profile, save). It tracks the page and open folders,
+  resolves what each key shows (the user's appearance over the plugin's
+  run-time title and image over SuperDeck's icon), and runs the core
+  actions, including timed Multi Action steps through `poll` and
+  `next_deadline`. A key's release always goes to the action it pressed,
+  even after a page change, and the press that wakes a sleeping device does
+  nothing else.
+- The core actions' icons are our own SVGs in `crates/superdeck-core/icons/`.
 
 ### `crates/superdeck-plugin-host`
 

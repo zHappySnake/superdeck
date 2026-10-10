@@ -14,13 +14,25 @@ publish = false
 [workspace.dependencies]
 # Shared dependency versions go here; crates use `foo.workspace = true`.
 anyhow = "1.0.104"
+boon = "0.6.1"
 clap = { version = "4.6.7", features = ["derive"] }
+cosmic-text = "0.19.0"
+data-url = "0.3.2"
 hidapi = { version = "2.6.7", default-features = false, features = ["linux-static-hidraw"] }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "jpeg", "png"] }
+resvg = { version = "0.47.0", default-features = false, features = ["raster-images", "text"] }
 rustix = { version = "1.1.5", features = ["event"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
+sha2 = "0.11.0"
+superdeck-core = { path = "crates/superdeck-core" }
 superdeck-device = { path = "crates/superdeck-device" }
+superdeck-render = { path = "crates/superdeck-render" }
+sys-locale = "0.3.2"
+tempfile = "3.27.0"
 thiserror = "2.0.21"
 udev = "0.9.3"
+uuid = { version = "1.28.0", features = ["serde", "v4"] }
 
 [workspace.lints.rust]
 unsafe_code = "deny"

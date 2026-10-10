@@ -128,7 +128,7 @@ These need design work early because the official app doesn't face them.
 
 ## Milestones
 
-### M0: Scaffold (this commit)
+### M0: Scaffold
 
 License, README, contributing guide, scope, architecture, repository layout,
 dev tooling, CI.
@@ -143,9 +143,10 @@ dev tooling, CI.
 - `superdeck-cli` for manual testing (`list`, `fill`, `image`, `brightness`, `events`)
 - Image pipeline per device (size, rotation, mirroring, JPEG/BMP encoding)
 
-Status: implemented. The protocol tests replay synthetic captures written
-from [device-protocol.md](device-protocol.md); M1 is done once each v1
-model has been checked on hardware and has a recorded capture (see
+Status: implemented, and verified on an MK.2 with a recorded capture. The
+other models are tested against synthetic captures written from
+[device-protocol.md](device-protocol.md); M1 is done once each v1 model has
+been checked on hardware and has a recorded capture (see
 [Verification status](device-protocol.md#verification-status)).
 
 ### M2: Core model and rendering
@@ -156,6 +157,10 @@ model has been checked on hardware and has a recorded capture (see
   Sans), SVG, animated GIF
 - Core actions (navigation, Multi Action, brightness, sleep)
 - Headless run mode that drives a device from a profile file
+
+Status: implemented and checked on an MK.2: key rendering
+(`superdeck-render`), the data model and profile format, the core actions
+(`superdeck-core`), and the headless mode (`superdeck-cli run`).
 
 ### M3: Plugin host and SDK
 
