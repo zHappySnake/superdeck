@@ -5,10 +5,11 @@ behave like the official Windows Stream Deck software, minus the marketplace
 and online features, and to run existing Stream Deck SDK plugins.
 
 > [!WARNING]
-> **Status: pre-alpha.** The device layer and the core (milestones M1 and
-> M2) are in place: profiles, pages, folders, and the built-in actions run on
-> a device from the command line. There's no app or plugin support yet. See
-> the [roadmap](docs/ROADMAP.md) for what comes next.
+> **Status: pre-alpha.** The device layer, the core, and the plugin host
+> (milestones M1 to M3) are in place: profiles, pages, folders, the built-in
+> actions, and Node.js Stream Deck plugins run on a device from the command
+> line. There's no app yet. See the [roadmap](docs/ROADMAP.md) for what comes
+> next.
 
 ## Goals
 

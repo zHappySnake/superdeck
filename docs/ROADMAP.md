@@ -169,6 +169,15 @@ Status: implemented and checked on an MK.2: key rendering
 - `@superdeck/sdk` and a "hello world" plugin
 - Run a few existing open-source Stream Deck plugins unchanged
 
+Status: implemented and checked on an MK.2: the protocol schemas
+(`sdk/protocol`), the plugin host (`superdeck-plugin-host`), plugins in the
+headless mode (`superdeck-cli run`), and `@superdeck/sdk` with its
+hello-world example. Four of Elgato's
+[sample plugins](https://github.com/elgatosf/streamdeck-plugin-samples),
+built on `@elgato/streamdeck`, run unchanged: Hello World, Counter, Cat Keys,
+and Lights Out. Plugins written as web pages wait for the desktop app (M4),
+and plugins' bundled profiles for the profile importer (M6).
+
 ### M4: Desktop app
 
 - Tauri shell, tray, single instance, autostart
