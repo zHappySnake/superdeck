@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Name": "Hello World",
+  "Version": "1.0.0.0",
+  "Author": "SuperDeck",
+  "Description": "A key that says hello, and counts how often it was pressed.",
+  "UUID": "com.example.hello",
+  "Icon": "imgs/plugin",
+  "Category": "Hello World",
+  "CategoryIcon": "imgs/category",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": { "MinimumVersion": "7.1" },
+  "OS": [
+    { "Platform": "mac", "MinimumVersion": "12" },
+    { "Platform": "windows", "MinimumVersion": "10" }
+  ],
+  "Nodejs": { "Version": "24", "Debug": "enabled" },
+  "Actions": [
+    {
+      "UUID": "com.example.hello.say",
+      "Name": "Say Hello",
+      "Icon": "imgs/action",
+      "Tooltip": "Says hello, and counts presses",
+      "PropertyInspectorPath": "ui/say.html",
+      "Controllers": ["Keypad"],
+      "States": [{ "Image": "imgs/key", "TitleAlignment": "middle", "FontSize": 16 }]
+    }
+  ]
+}

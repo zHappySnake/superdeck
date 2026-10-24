@@ -1,0 +1,24 @@
+{
+  "name": "@superdeck/example-hello-world",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The smallest useful SuperDeck plugin: a key that says hello",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "esbuild src/plugin.ts --bundle --platform=node --target=node24 --format=esm --sourcemap --outfile=com.example.hello.sdPlugin/bin/plugin.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@superdeck/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.28.2",
+    "typescript": "^6.0.3"
+  }
+}

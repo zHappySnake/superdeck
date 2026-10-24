@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Say Hello</title>
+    <style>
+      body {
+        font: 13px sans-serif;
+        color: #d8d8d8;
+        background: #2d2d2d;
+        margin: 12px;
+      }
+      label {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      input {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <label>Greeting <input id="greeting" placeholder="Hello" /></label>
+    <script>
+      // The property inspector protocol, without a library: the app calls this function.
+      let socket;
+      let context;
+      let settings = {};
+      const input = document.getElementById("greeting");
+
+      function connectElgatoStreamDeckSocket(port, uuid, registerEvent, _info, actionInfo) {
+        context = uuid;
+        settings = JSON.parse(actionInfo).payload.settings;
+        input.value = settings.greeting ?? "";
+        socket = new WebSocket(`ws://127.0.0.1:${port}`);
+        socket.onopen = () => socket.send(JSON.stringify({ event: registerEvent, uuid }));
+        socket.onmessage = (message) => {
+          const event = JSON.parse(message.data);
+          // The plugin saved settings, when the key was pressed: keep its count.
+          if (event.event === "didReceiveSettings") settings = event.payload.settings;
+        };
+      }
+
+      input.addEventListener("input", () => {
+        // setSettings replaces all of them, so send the count back too.
+        settings = { ...settings, greeting: input.value };
+        socket?.send(JSON.stringify({ event: "setSettings", context, payload: settings }));
+      });
+    </script>
+  </body>
+</html>
