@@ -75,6 +75,23 @@ fn sample_plugins() {
     );
 }
 
+/// Plugins found through a relative directory get absolute paths, since
+/// they run in their own directory.
+#[test]
+fn relative_directories_become_absolute() {
+    // Tests run in the crate's directory.
+    let found = discover(&[PathBuf::from("tests/data/plugins")]);
+    let counter = &found.plugins["com.example.counter"];
+    assert_eq!(counter.dir, samples().join("com.example.counter.sdPlugin"));
+    assert_eq!(
+        counter.entry,
+        Entry::Node {
+            script: samples().join("com.example.counter.sdPlugin/bin/plugin.js"),
+            debug: Some("enabled".to_owned()),
+        }
+    );
+}
+
 #[test]
 fn manifest_images() {
     let found = discover(&[samples()]);

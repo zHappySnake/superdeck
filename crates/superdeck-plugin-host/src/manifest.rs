@@ -290,7 +290,8 @@ pub enum Entry {
 pub struct Plugin {
     /// Plugin UUID.
     pub uuid: String,
-    /// The `<uuid>.sdPlugin` directory.
+    /// The `<uuid>.sdPlugin` directory, as an absolute path: plugins run
+    /// in it, so paths relative to the caller's directory would break.
     pub dir: PathBuf,
     /// Its manifest.
     pub manifest: Manifest,
@@ -301,6 +302,7 @@ pub struct Plugin {
 impl Plugin {
     /// Reads the plugin in `dir`, a `<uuid>.sdPlugin` directory.
     pub fn load(dir: &Path) -> Result<Self, Error> {
+        let dir = &std::path::absolute(dir).map_err(Error::io(dir))?;
         let path = dir.join(MANIFEST_FILE);
         let text = std::fs::read(&path).map_err(Error::io(&path))?;
         // Some editors on Windows write a byte order mark.
