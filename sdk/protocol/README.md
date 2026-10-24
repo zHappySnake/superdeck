@@ -159,7 +159,8 @@ When a plugin registers, SuperDeck sends it `deviceDidConnect` for every
 connected device, then `willAppear` for each of its actions that is showing.
 Events for a plugin that isn't connected are dropped, not queued: a plugin
 that starts, or starts again, learns what's showing from these
-`willAppear`s.
+`willAppear`s. Each `willAppear` is followed by `titleParametersDidChange`,
+which comes again only when the title or its style changes.
 
 ### Registration info
 

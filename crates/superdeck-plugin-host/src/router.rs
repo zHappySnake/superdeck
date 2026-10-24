@@ -18,7 +18,7 @@ use crate::log::{PluginLog, Source};
 use crate::manifest::Plugin;
 use crate::message::{
     ActionPayload, Command, Device, Event, GlobalSettingsPayload, InspectorEvent, Instance,
-    ParseError, Registration, Resources, Settings,
+    ParseError, Registration, Resources, Settings, TitlePayload,
 };
 
 /// Identifies a WebSocket connection.
@@ -251,6 +251,9 @@ struct Slot {
     /// Contexts showing, as this connection has been told: `willAppear`
     /// and `willDisappear` alternate for each.
     showing: HashSet<String>,
+    /// The last `titleParametersDidChange` this connection got for each
+    /// showing context, so it hears only of changes.
+    titles: HashMap<String, TitlePayload>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -304,6 +307,7 @@ impl Router {
                     conn: None,
                     contexts: HashSet::new(),
                     showing: HashSet::new(),
+                    titles: HashMap::new(),
                 };
                 (plugin.uuid.clone(), slot)
             })
@@ -431,6 +435,7 @@ impl Router {
                 {
                     slot.conn = Some(conn);
                     slot.showing.clear();
+                    slot.titles.clear();
                     slot.log.write(Source::Host, "registered");
                     self.peers.insert(conn, Peer::Plugin(uuid.clone()));
                     for device in &self.devices {
@@ -840,11 +845,24 @@ impl Router {
         if slot.conn.is_none() {
             return Vec::new();
         }
-        // The app may announce a key both as the plugin registers and
-        // when it starts; the plugin hears of it once.
+        // The app may announce a key, and its title parameters, both as
+        // the plugin registers and when it starts; the plugin hears of it
+        // once.
         let repeated = match event {
             Event::WillAppear(event) => !slot.showing.insert(event.context.clone()),
-            Event::WillDisappear(event) => !slot.showing.remove(&event.context),
+            Event::WillDisappear(event) => {
+                slot.titles.remove(&event.context);
+                !slot.showing.remove(&event.context)
+            }
+            Event::TitleParametersDidChange(event) => {
+                if slot.titles.get(&event.context) == Some(&event.payload) {
+                    true
+                } else {
+                    slot.titles
+                        .insert(event.context.clone(), event.payload.clone());
+                    false
+                }
+            }
             _ => false,
         };
         if repeated {
@@ -1058,7 +1076,10 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::message::{ActionEvent, Coordinates, DeviceInfo, Size};
+    use crate::message::{
+        ActionEvent, Coordinates, DeviceInfo, FontStyle, Size, TitleAlignment, TitleEvent,
+        TitleParameters,
+    };
 
     const PLUGIN: &str = "com.example.a";
     const OTHER: &str = "com.example.b";
@@ -1114,6 +1135,30 @@ mod tests {
             context: context.to_owned(),
             device: "D1".to_owned(),
             payload: payload(),
+        })
+    }
+
+    fn title(context: &str, title: &str) -> Event {
+        Event::TitleParametersDidChange(TitleEvent {
+            action: format!("{PLUGIN}.action"),
+            context: context.to_owned(),
+            device: "D1".to_owned(),
+            payload: TitlePayload {
+                settings: settings(json!({})),
+                coordinates: Coordinates { column: 1, row: 2 },
+                state: None,
+                title: title.to_owned(),
+                title_parameters: TitleParameters {
+                    font_family: String::new(),
+                    font_size: 12.0,
+                    font_style: FontStyle::Regular,
+                    font_underline: false,
+                    show_title: true,
+                    title_alignment: TitleAlignment::Middle,
+                    title_color: "#ffffff".to_owned(),
+                },
+                resources: Resources::new(),
+            },
         })
     }
 
@@ -1280,6 +1325,32 @@ mod tests {
         f.router.send(PLUGIN, &will_appear("c"));
         connect(&mut f.router, PLUGIN, 2);
         assert_eq!(f.router.send(PLUGIN, &will_appear("c")).len(), 1);
+    }
+
+    #[test]
+    fn title_parameters_are_sent_when_they_change() {
+        let mut f = fixture();
+        connect(&mut f.router, PLUGIN, 1);
+        let disappear = || {
+            let Event::WillAppear(event) = will_appear("c") else {
+                unreachable!()
+            };
+            Event::WillDisappear(event)
+        };
+        f.router.send(PLUGIN, &will_appear("c"));
+        assert_eq!(f.router.send(PLUGIN, &title("c", "1")).len(), 1);
+        // The key announced again, as when the app starts while the
+        // plugin registers.
+        assert!(f.router.send(PLUGIN, &will_appear("c")).is_empty());
+        assert!(f.router.send(PLUGIN, &title("c", "1")).is_empty());
+        assert_eq!(f.router.send(PLUGIN, &title("c", "2")).len(), 1);
+        assert_eq!(f.router.send(PLUGIN, &title("other", "2")).len(), 1);
+        // Showing again, or to a new connection: sent again.
+        f.router.send(PLUGIN, &disappear());
+        f.router.send(PLUGIN, &will_appear("c"));
+        assert_eq!(f.router.send(PLUGIN, &title("c", "2")).len(), 1);
+        connect(&mut f.router, PLUGIN, 2);
+        assert_eq!(f.router.send(PLUGIN, &title("c", "2")).len(), 1);
     }
 
     #[test]
