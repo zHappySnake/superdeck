@@ -22,7 +22,7 @@ data-url = "0.3.2"
 futures-util = { version = "0.3.34", default-features = false, features = ["sink", "std"] }
 hidapi = { version = "2.6.7", default-features = false, features = ["linux-static-hidraw"] }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "jpeg", "png"] }
-resvg = { version = "0.47.0", default-features = false, features = ["raster-images", "text"] }
+resvg = { version = "0.49.0", default-features = false, features = ["raster-images", "text"] }
 rustix = { version = "1.1.5", features = ["event"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.151", features = ["preserve_order"] }
